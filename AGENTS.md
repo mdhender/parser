@@ -104,4 +104,8 @@ commits with messages identifying the subsystem or milestone. Preserve unrelated
 worktree changes. Report checks honestly, including when no tests exist, and
 state whether changes are local, committed, or pushed.
 
+Every commit that changes code must bump the semantic version in `version.go`.
+Documentation-only commits may bump the version, but are not required to.
+Include any changes to `version.go` in the same commit as the associated changes.
+
 Do not create GitHub CI actions or workflows.
