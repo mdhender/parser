@@ -1,12 +1,12 @@
-# Pinned Lemon architecture — Milestone D
+# Pinned Lemon architecture — Milestone E
 
 ## Scope and evidence
 
 This document describes the complete C pipeline and the implemented Go grammar
-front end, parser automaton, and numeric tables. Milestone D adds default/shift-
-reduce compression, state renumbering, and packed action/offset construction.
-C emission and a parser runtime are not Go features yet.
-C code embedded in grammars remains opaque text.
+front end, parser automaton, numeric tables, and C emitter. Milestone E adds
+template processing, semantic-action rewriting, and C/header/report/SQL output.
+The generated runtime comes from the pinned original C template, not a Go
+parser engine. Embedded C is rewritten textually, not parsed as C.
 
 The reference is SQLite **3.50.4**, Fossil revision
 `4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3`.
@@ -37,6 +37,10 @@ exits with its status. Everything else lives in `internal/lemon`:
 | `automaton.go` | Byte sets, `FindFirstSets`, configuration builder/closure, `FindStates`/`getstate`/`buildshifts`, `same_symbol`, `FindLinks`, `FindFollowSets`. |
 | `action.go` | `Action_add`/`Action_sort`, `FindActions`, `resolve_conflict`, original action enum values and retained loser actions. |
 | `table.go` | `CompressTables`, `ResortStates`/`stateResortCompare`, `compute_action`, `acttab` allocation/action/insertion/sizing, and `ReportTable` numeric packing/array preparation and table snapshots. |
+| `template.go` | Output naming/opening, template search, 999-byte chunk transfers and parser-name substitution, logical line counting, C integer type selection. |
+| `code.go` | `translate_code` alias/major-code/overwrite rewriting, destructor-call prefixes/suffixes; `print_stack_union` datatype hashing and semantic union. |
+| `emit.go` | `ReportTable` orchestration, control macros, numeric array rendering and byte accounting, destructor/reduction switch sharing, hooks and line restoration. |
+| `report.go` | `ReportOutput`, `RulePrint`/`PrintAction`, `ReportHeader` (unchanged-file preservation), and SQL metadata. |
 
 All mutable tables, define usage, parser state, and diagnostics belong to one
 invocation; unlike C's process statics, repeated Go calls do not share state.
@@ -84,7 +88,18 @@ automatically see renumbered IDs. Rule `Index` remains the original identity;
 numeric reductions use `IRule`. The table driver copies the packing block from
 `ReportTable` without running template processing or code translation. No C
 types, table byte-size accounting, fallback-array emission, or C text rendering
-are implemented in D. See [table snapshots](../testdata/tables/README.md).
+are implemented in D's snapshot mode. E's ordinary generation path adds these
+without changing the snapshot contract. See [table snapshots](../testdata/tables/README.md).
+
+Ordinary generation now follows the full pinned `main` flow below. `cOutput`
+counts generated newlines while preserving C's historical uncounted `#ifndef`
+and skipped-template-header line quirks. Semantic union assignment runs before
+action rewriting. Equal interned C strings are compared by value in Go,
+including nil-versus-empty distinctions, so identical reduction code and
+destructors share cases without depending on Go string addresses. Report output
+runs before translation mutates rules/destructor source lines, as in C.
+`BuildTables` remains the numeric source of truth; rendering adds no separate
+packing algorithm. See [generation fixtures](../testdata/generation/README.md).
 
 ## 1. Main execution flow
 
@@ -375,8 +390,10 @@ and pushes the goto result; stack entries may hold pending reduce codes, not
 only state numbers (`L731–778`). `yyGrowStack`, `ParseFinalize`, and `ParseFree`
 manage instance storage and destructors (`L297–325`, `L441–485`). Error-symbol
 recovery, no-recovery mode, and ordinary token-discard recovery are different
-compile-time paths (`L965–1049`). These C runtime semantics are reference
-behavior, not existing Go runtime functionality.
+compile-time paths (`L965–1049`). These C runtime semantics come from the
+original template. E's arithmetic smoke test executes generated C, but
+exhaustive runtime equivalence and SQLite integration remain outside the
+current verification claim.
 
 SQLite's `parse.y` demonstrates this boundary: C types/context/hooks and custom
 stack allocation (`parse.y:L24–57`), parser renaming and `YYNOERRORRECOVERY`

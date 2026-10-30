@@ -1,6 +1,5 @@
-// Package lemon implements grammar processing, automaton construction, and
-// table packing for SQLite's Lemon. The authoritative source is
-// reference/sqlite/tool/lemon.c; C output construction is not implemented yet.
+// Package lemon implements SQLite's Lemon C parser generator. The authoritative
+// source is reference/sqlite/tool/lemon.c.
 package lemon
 
 import (
@@ -39,28 +38,30 @@ type Symbol struct {
 	DestLine   int
 	Datatype   *string
 	Content    bool
+	Dtnum      int
 	Subsymbols []*Symbol
 	Nullable   bool
 	First      symbolSet
 }
 
 type Rule struct {
-	LHS         *Symbol
-	LHSAlias    *string
-	RuleLine    int
-	RHS         []*Symbol
-	RHSAlias    []*string
-	Line        int
-	Code        *string // nil differs from an explicitly empty action.
-	PrecSymbol  *Symbol
-	Index       int // Original source identity, never renumbered.
-	IRule       int // Action-first generated rule number.
-	NoCode      bool
-	NeverReduce bool
-	NextLHS     *Rule
-	LHSStart    bool
-	CanReduce   bool
-	DoesReduce  bool
+	LHS                    *Symbol
+	LHSAlias               *string
+	RuleLine               int
+	RHS                    []*Symbol
+	RHSAlias               []*string
+	Line                   int
+	Code                   *string // nil differs from an explicitly empty action.
+	PrecSymbol             *Symbol
+	Index                  int // Original source identity, never renumbered.
+	IRule                  int // Action-first generated rule number.
+	NoCode                 bool
+	NeverReduce            bool
+	NextLHS                *Rule
+	LHSStart               bool
+	CanReduce              bool
+	DoesReduce             bool
+	CodePrefix, CodeSuffix *string
 }
 
 // Grammar owns all mutable state for one invocation. Maps are used only for
@@ -85,6 +86,8 @@ type Grammar struct {
 	defines                                                              []string
 	defineUsed                                                           []bool
 	noLineNumbers                                                        bool
+	outname                                                              string
+	tableSize, nActionTab, nLookaheadTab                                 int
 	errors                                                               int
 	stderr                                                               io.Writer
 }

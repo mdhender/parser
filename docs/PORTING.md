@@ -233,3 +233,67 @@ remain unchanged. Work stops at numeric tables; no C emitter was implemented.
   `lempar.c`. Include C type-width choices and byte-size statistics; compare
   complete artifacts against uninstrumented C. Full parser/runtime compatibility
   and SQLite integration remain unclaimed.
+
+## Milestone E — C code generation
+
+Authorized by the owner's explicit request to implement Milestone E. Pinned
+sources, template, invocation, build configuration, and all Milestone A goldens
+remain unchanged. No other Go port or alternative algorithm was used.
+
+- Translated routines: `file_makename`/`file_open`, `pathsearch`, `tplt_open`,
+  `tplt_xfer`/`tplt_skip_header`, `tplt_linedir`/`tplt_print`, `RulePrint`,
+  `PrintAction`, `ReportOutput`, `writeRuleText`, `ReportHeader`, `has_destructor`,
+  `translate_code`/string construction, `emit_code`, `emit_destructor_code`,
+  `print_stack_union`, `minimum_size_type`, and the remaining `ReportTable`
+  macro/array/fallback/name/rule/destructor/action/hook/SQL rendering and byte
+  accounting. Normal `main` generation now reaches the full pipeline.
+- Go files: `template.go`, `code.go`, `emit.go`, `report.go` in `internal/lemon`;
+  integration/metadata in `lemon.go`, `options.go`, and `grammar.go`. Numeric
+  packing remains owned by the unchanged `BuildTables`; snapshot contracts
+  remain unchanged. Uses standard library only, no cgo/C subprocesses.
+- Preserved details: 999-byte template chunks, exact parser-name boundaries,
+  header-skip and uncounted-ifdef line-counter quirks, used-define prologue,
+  hashed semantic union slots, alias/major-code/overwrite rewriting and errors,
+  temporary LHS storage, destructor prefixes/suffixes, shared switch cases,
+  unchanged-header timestamps, input-relative names, no automatic directory
+  creation, `.sql` line-restoration paths, partial artifacts on errors, `-r`'s
+  zero retained states, and exact type/byte-size statistics.
+- Tests: **52 full generation cases** in `testdata/generation/cases.tsv` use
+  uninstrumented pinned C. The explicit `scripts/test-generation.sh` verifies
+  C-derived saved hashes and compares full C/Go stdout, stderr, status,
+  inventories, bytes, and `diff -bw`, retaining failures. Offline public-command
+  tests use compact C-only artifact inventories/hashes; no new large duplicate
+  SQLite goldens. They also check unchanged/stale header behavior.
+- Executed results: all 52 cases match byte for byte and under `diff -bw`.
+  C-only regeneration/repeats and independent reference-only execution reproduce
+  all expectations. The exact `./lemon -S parse.y` case reproduces all four
+  unchanged Milestone A artifacts, including `parse.c` SHA-256
+  `77ff8fda334c8b0cc01f5734765f994417ba81417d50dedf3d0d7241fe8a4a52`.
+  Default SQLite statistics match 583 retained states, 2,207 action entries,
+  2,341 raw lookahead entries, and 12,628 accounted table bytes.
+- Supplementary generated-C execution: C- and Go-generated arithmetic parsers
+  compile and run; `7 - 2 * 3` returns value 1, one acceptance, no syntax errors.
+  This is not SQLite compilation or runtime integration.
+- Disposable differential validation: 12 additional cases match full artifacts
+  and process results: type-width transitions near 127/255 symbols, 80 distinct
+  semantic types/collisions, 999-byte template/name boundaries, nested/backslash
+  input names, output-directory basename handling, and SQL-open partial failure.
+- Regression checks: all 58 grammar, 33 automaton, and 48 table differential
+  cases still pass; `scripts/test-reference.sh` reproduces all pristine C
+  artifacts/process results twice. Offline `go test -count=3 ./...` and
+  `go vet ./...` pass on Go 1.27.3 with `GOTOOLCHAIN=local`, `GOPROXY=off`,
+  `CGO_ENABLED=0`, and nonexistent `CC` for tests. Missing compiler makes the
+  generation script fail explicitly with status 2. `file` reports a statically
+  linked Go binary; `ldd` reports no dynamic executable.
+- Intentional representation differences: Go builders replace `append_str`
+  storage, value equality replaces C interned-string pointer comparison, and
+  output counting is local to an invocation. Existing undefined-C exclusions
+  remain; no observed output differences are normalized or unexplained.
+- Remaining verification limits: PATH-only lookup, permission-error distinctions,
+  larger integer-width boundaries, exhaustive parser runtime/error recovery,
+  and SQLite integration are not covered by the executed matrix. See
+  [COMPATIBILITY.md](COMPATIBILITY.md) for the precise boundary.
+- Next recommended task, **only after authorization**: Milestone F, a final
+  compatibility audit, broader generated-runtime checks and SQLite source-tree
+  compilation/testing where feasible. Milestone E is complete; final project
+  compatibility certification remains open.

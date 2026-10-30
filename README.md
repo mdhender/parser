@@ -1,13 +1,13 @@
 # parser
 
 A faithful Go port of SQLite's Lemon parser generator, currently at
-**Milestone D: table generation**. The Go command preprocesses, scans, and
+**Milestone E: C code generation**. The Go command preprocesses, scans, and
 parses Lemon grammars, computes FIRST/nullable sets, constructs LALR states and
 lookaheads, resolves conflicts, compresses and renumbers states, and packs action
-tables, including for SQLite's full grammar. C parser generation is not
-implemented yet; normal generation
-fails explicitly without creating output files. The eventual executable will
-generate C parsers, not Go parsers.
+tables, including for SQLite's full grammar. It uses the original `lempar.c`
+template to generate C parsers, headers, reports, and optional SQL metadata.
+The pinned SQLite baseline matches byte for byte; full compatibility and SQLite
+runtime integration remain Milestone F work.
 
 The reference is pinned to SQLite 3.50.4. Pristine sources and golden outputs
 are committed; tests do not download anything or update fixtures.
@@ -35,6 +35,7 @@ stdout, stderr, exit status, and output-file inventories:
 scripts/test-grammar.sh
 scripts/test-automaton.sh
 scripts/test-tables.sh
+scripts/test-generation.sh
 ```
 
 This explicit differential command requires a C compiler, Go, Bash, coreutils,
@@ -46,6 +47,8 @@ and never execute C or download dependencies.
 
 ```sh
 CGO_ENABLED=0 go build -o /tmp/lemon ./cmd/lemon
+mkdir -p /tmp/lemon-output
+/tmp/lemon -Treference/sqlite/tool/lempar.c -d/tmp/lemon-output -S reference/sqlite/src/parse.y
 /tmp/lemon -E -DSQLITE_OMIT_TRIGGER reference/sqlite/src/parse.y
 /tmp/lemon -g reference/sqlite/src/parse.y
 /tmp/lemon --grammar-snapshot reference/sqlite/src/parse.y
@@ -69,7 +72,14 @@ the five numeric arrays intended for C emission. `-c` disables compression;
 initialization, producing zero retained states and empty action tables.
 See [table fixtures and format](testdata/tables/README.md).
 
+Normal generation writes `.c`, `.h`, and `.out` alongside the input unless `-d`
+sets an existing output directory. `-S` adds SQL metadata; `-q` suppresses the
+report; `-m` emits makeheaders-style C and omits the header. Template lookup
+checks explicit `-T`, an adjacent `.lt`, current-directory `lempar.c`, then the
+executable directory/PATH. The Go binary needs no C compiler or cgo; the template
+is a runtime input. See [generation fixtures](testdata/generation/README.md).
+
 See [reference provenance and reproduction](docs/REFERENCE.md),
 [architecture](docs/ARCHITECTURE.md), [porting log](docs/PORTING.md), and
-[compatibility scope](docs/COMPATIBILITY.md). Work stops at Milestone D pending
-authorization for Milestone E.
+[compatibility scope](docs/COMPATIBILITY.md). Work stops at Milestone E pending
+authorization for Milestone F.

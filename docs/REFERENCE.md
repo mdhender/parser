@@ -149,7 +149,8 @@ GOTOOLCHAIN=local GOPROXY=off CGO_ENABLED=0 go vet ./...
 
 The reference Go test checks checked-in source and golden hashes. Milestone B's
 grammar tests additionally compare the Go command against checked-in C grammar
-expectations. Neither ordinary test executes C or generates a C parser.
+expectations. Neither executes C; Milestone E's ordinary tests additionally
+generate C text and compare its inventory/hashes without compiling it.
 
 ## Milestone B grammar oracle
 
@@ -217,7 +218,34 @@ Milestone A `parse.c` golden: `yy_action` (2,207), `yy_lookahead` (2,394),
 `yy_shift_ofst` (583), `yy_reduce_ofst` (413), and `yy_default` (583). Every
 integer matched. This comparison extracted only array initializers and removed
 C index comments; it did not normalize an artifact comparison or establish
-generated-C text compatibility. Full output acceptance still awaits Milestone E/F.
+generated-C text compatibility. Milestone E separately verifies full output below.
+
+## Milestone E full-output oracle
+
+The source pin, build configuration, and Milestone A artifact goldens remain
+unchanged. `scripts/test-generation.sh` builds pristine `lemon.c` (no snapshot
+instrumentation) with the same `cc -o EXECUTABLE SOURCE` command and Go with
+`CGO_ENABLED=0`. The environment is `LC_ALL=C`, `TZ=UTC`, `GOTOOLCHAIN=local`,
+`GOPROXY=off`, and `GOSUMDB=off`. It records the compiler, platform, Go version,
+invocation convention, and manifest in its isolated work directory.
+
+The [generation matrix](../testdata/generation/cases.tsv) gives exact ordered
+options and source paths. Each run copies its source to `grammar.y`, except
+`sqlite-baseline`, which uses **`./lemon -S parse.y`**, exactly as above.
+The template is the pinned `lempar.c`, copied to the current directory, adjacent
+`.lt`, or executable directory according to the manifest operation. The output
+directory case precreates `out`; `missing` is intentionally absent. C and Go
+always receive equivalent paths. All four baseline Go artifacts reproduce the
+hashes below exactly, not merely under whitespace-insensitive comparison.
+
+All 52 cases pass exact and `diff -bw` artifact/process comparisons. Compact
+C-derived inventories/hashes are checked in under `testdata/generation/golden`;
+ordinary Go tests use these offline. Explicit differential runs compare actual
+files, not just hashes, and retain full failure artifacts. C-only update/repeat
+and reference-only modes are documented in the
+[fixture guide](../testdata/generation/README.md). The runtime case additionally
+compiles and executes a small arithmetic parser; this does not compile SQLite
+or establish its runtime compatibility. Final Milestone F sign-off remains open.
 
 ## Golden artifact hashes
 

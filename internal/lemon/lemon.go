@@ -97,8 +97,25 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	} else if o.flags['g'] {
 		g.reprint(stdout)
 	} else {
-		fmt.Fprintln(stderr, "C parser generation is not implemented (Milestone D supports -E, -g, --grammar-snapshot, --automaton-snapshot, and --table-snapshot only).")
-		return 1
+		g.FindRulePrecedences()
+		g.FindFirstSets()
+		g.FindStates()
+		g.FindLinks()
+		g.FindFollowSets()
+		g.FindActions()
+		if !o.flags['c'] {
+			g.CompressTables()
+		}
+		if !o.flags['r'] {
+			g.ResortStates()
+		}
+		if !o.flags['q'] {
+			g.reportOutput(o)
+		}
+		g.reportTable(args[0], o)
+		if !o.flags['m'] {
+			g.reportHeader(o)
+		}
 	}
 	if o.flags['s'] {
 		fmt.Fprintln(stdout, "Parser statistics:")
@@ -106,7 +123,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 			label string
 			n     int
 		}{
-			{"terminal symbols", g.NTerminal}, {"non-terminal symbols", g.NSymbol - g.NTerminal}, {"total symbols", g.NSymbol}, {"rules", len(g.Rules)}, {"states", 0}, {"conflicts", 0}, {"action table entries", 0}, {"lookahead table entries", 0}, {"total table size (bytes)", 0},
+			{"terminal symbols", g.NTerminal}, {"non-terminal symbols", g.NSymbol - g.NTerminal}, {"total symbols", g.NSymbol}, {"rules", len(g.Rules)}, {"states", g.NXState}, {"conflicts", g.NConflict}, {"action table entries", g.nActionTab}, {"lookahead table entries", g.nLookaheadTab}, {"total table size (bytes)", g.tableSize},
 		} {
 			n := 35 - len(s.label)
 			if n > 32 {
@@ -114,6 +131,12 @@ func Run(args []string, stdout, stderr io.Writer) int {
 			}
 			fmt.Fprintf(stdout, "  %s%s %5d\n", s.label, strings.Repeat(".", n), s.n)
 		}
+	}
+	if g.NConflict > 0 {
+		fmt.Fprintf(stderr, "%d parsing conflicts.\n", g.NConflict)
+	}
+	if g.errors > 0 || g.NConflict > 0 {
+		return 1
 	}
 	return 0
 }

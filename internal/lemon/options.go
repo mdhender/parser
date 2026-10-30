@@ -35,11 +35,12 @@ var optionTable = []struct {
 }
 
 type options struct {
-	flags          map[byte]bool
-	defines, files []string
-	snapshot       bool
-	automaton      bool
-	tables         bool
+	flags               map[byte]bool
+	defines, files      []string
+	snapshot            bool
+	automaton           bool
+	tables              bool
+	outputDir, template *string
 }
 
 func parseOptions(args []string, stderr io.Writer) (options, bool) {
@@ -109,6 +110,10 @@ func parseOptions(args []string, stderr io.Writer) (options, bool) {
 			continue
 		}
 		switch label {
+		case 'd':
+			o.outputDir = &value
+		case 'T':
+			o.template = &value
 		case 'D':
 			if j := strings.IndexByte(value, '='); j >= 0 {
 				value = value[:j]

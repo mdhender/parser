@@ -2,11 +2,14 @@ package lemon_test
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mdhender/parser/internal/lemon"
 )
@@ -133,20 +136,120 @@ func TestRHSLimit(t *testing.T) {
 	}
 }
 
-func TestGenerationNotYetImplemented(t *testing.T) {
-	t.Chdir(t.TempDir())
-	if err := os.WriteFile("grammar.y", []byte("start ::= T.\n"), 0600); err != nil {
-		t.Fatal(err)
-	}
-	var out, errout bytes.Buffer
-	if status := lemon.Run([]string{"lemon", "grammar.y"}, &out, &errout); status != 1 || out.Len() != 0 || !strings.Contains(errout.String(), "C parser generation is not implemented") {
-		t.Fatalf("status=%d stdout=%s stderr=%s", status, &out, &errout)
-	}
-	files, err := os.ReadDir(".")
+func TestGenerationOracle(t *testing.T) {
+	root, err := filepath.Abs("../..")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(files) != 1 {
-		t.Fatal("unsupported generation created artifacts")
+	manifest, err := os.ReadFile(filepath.Join(root, "testdata/generation/cases.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	template, err := os.ReadFile(filepath.Join(root, "reference/sqlite/tool/lempar.c"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range strings.Split(string(manifest), "\n") {
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		fields := strings.Split(line, "\t")
+		name, operation, input := fields[0], fields[1], fields[2]
+		t.Run(name, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			read := func(path string) []byte {
+				t.Helper()
+				b, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return b
+			}
+			write := func(path string, data []byte) {
+				t.Helper()
+				if err := os.WriteFile(path, data, 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := os.Mkdir("out", 0700); err != nil {
+				t.Fatal(err)
+			}
+			filename, argv0 := "grammar.y", "./lemon"
+			if operation == "baseline" {
+				filename = "parse.y"
+			}
+			if input != "missing" {
+				path := filepath.Join(root, "testdata/generation", input)
+				if input == "sqlite" {
+					path = filepath.Join(root, "reference/sqlite/src/parse.y")
+				}
+				write(filename, read(path))
+			}
+			templateName := "lempar.c"
+			if operation == "adjacent" {
+				templateName = "grammar.lt"
+			}
+			if operation == "executable" {
+				if err := os.Mkdir("bin", 0700); err != nil {
+					t.Fatal(err)
+				}
+				templateName = "bin/lempar.c"
+				argv0 = "./bin/lemon"
+			}
+			write(templateName, template)
+			args := []string{argv0}
+			if len(fields) == 4 {
+				args = append(args, strings.Fields(fields[3])...)
+			}
+			args = append(args, filename)
+			var out, errout bytes.Buffer
+			status := lemon.Run(args, &out, &errout)
+			write("stdout.txt", out.Bytes())
+			write("stderr.txt", errout.Bytes())
+			write("exit-status.txt", []byte(strconv.Itoa(status)+"\n"))
+			var hashes strings.Builder
+			err := filepath.WalkDir(".", func(path string, entry os.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+				if entry.IsDir() || path == filename || path == templateName {
+					return nil
+				}
+				fmt.Fprintf(&hashes, "%x  ./%s\n", sha256.Sum256(read(path)), filepath.ToSlash(path))
+				return nil
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := read(filepath.Join(root, "testdata/generation/golden", name+".sha256"))
+			if hashes.String() != string(want) {
+				t.Errorf("artifact inventory/hashes differ:\ngot:\n%swant:\n%s", hashes.String(), want)
+			}
+			if name == "minimal" {
+				// An unchanged header must not be rewritten, but a different
+				// header must be replaced. Use an old timestamp, not sleeps.
+				old := time.Unix(123456789, 0)
+				if err := os.Chtimes("grammar.h", old, old); err != nil {
+					t.Fatal(err)
+				}
+				out.Reset()
+				errout.Reset()
+				if lemon.Run(args, &out, &errout) != 0 {
+					t.Fatal(&errout)
+				}
+				info, err := os.Stat("grammar.h")
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !info.ModTime().Equal(old) {
+					t.Error("unchanged header rewritten")
+				}
+				header := read("grammar.h")
+				write("grammar.h", []byte("stale\n"))
+				if lemon.Run(args, &out, &errout) != 0 || !bytes.Equal(read("grammar.h"), header) {
+					t.Error("stale header not replaced")
+				}
+			}
+		})
 	}
 }

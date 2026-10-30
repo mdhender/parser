@@ -1,13 +1,13 @@
-# Pinned Lemon compatibility — Milestone D
+# Pinned Lemon compatibility — Milestone E
 
 ## Status and pin
 
-**Grammar processing, parser automaton construction, and table generation are implemented and
-reference-verified for the cases below. C parser generation is not implemented;
-no parser-output or runtime compatibility is claimed.** Milestone A's reference
-baseline remains unchanged.
-Milestones B through D add the Go executable, offline grammar/automaton/table goldens,
-and explicit C-versus-Go differential checks.
+**Grammar processing, parser automaton construction, table generation, and C
+emission are implemented and reference-verified for the cases below.** All four
+pinned SQLite baseline artifacts match byte for byte. Milestone A's sources and
+goldens remain unchanged. Milestone F's final compatibility campaign and SQLite
+runtime integration are not complete; a small generated arithmetic parser is
+compiled and executed as supplementary evidence only.
 
 Reference: SQLite **3.50.4**, Fossil revision
 `4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3`.
@@ -53,9 +53,8 @@ syntax/exclusion errors, missing input, empty input, and invalid options.
 The 1000/1001 RHS-symbol boundary is also covered through the Go command API.
 
 Repeated offline runs check determinism and isolation between invocations.
-Unimplemented stages are alias rewriting, C/template emission, and runtime
-validation. Parsing hooks and destructors does
-not implement their emitter/runtime effects.
+Alias rewriting and C/template emission are covered separately by E below;
+snapshot-only comparisons do not establish their emitter/runtime effects.
 
 ### Milestone C automaton comparisons
 
@@ -83,7 +82,7 @@ normalization. Default SQLite matches **323 symbols, 187 terminals, 409 rules,
 845 discovery-order states, zero conflicts**. These are uncompressed automaton
 counts, not the number of states retained by later table optimization.
 Fallback/wildcard metadata and `error` transitions are covered; runtime fallback,
-wildcard dispatch, and error recovery still await generated C and runtime tests.
+wildcard dispatch, and error recovery still await dedicated runtime tests.
 
 ### Milestone D table comparisons
 
@@ -119,8 +118,47 @@ under default, `-c`, `-r`, and `-c -r` (96 successful comparisons). Tokens/rules
 were permuted, nullable alternatives varied, and absent/empty actions mixed;
 all cases reached table construction and matched stdout, stderr, and status.
 No differences are normalized or permitted. C type selection, byte-size
-accounting, template processing, and generated parser runtime remain Milestone E
-or later, not part of the numeric-table claim.
+accounting and template processing are verified separately by E, not by the
+numeric-table snapshots. Generated runtime verification remains limited.
+
+### Milestone E complete artifact comparisons
+
+`scripts/test-generation.sh` uses **uninstrumented pristine C Lemon** and the
+pinned `lempar.c`. All **52 cases** compare stdout, stderr, exit status, complete
+artifact inventories, exact bytes, and `diff -bw` in equivalent isolated paths.
+The `sqlite-baseline` case uses the exact `./lemon -S parse.y` invocation and
+compares C artifacts against the unchanged Milestone A goldens before comparing
+Go. `parse.c`, `.h`, `.out`, and `.sql` all match exactly. No whitespace or path
+normalization is permitted. `-S`'s `.sql` line-restoration paths are preserved.
+
+The [matrix](../testdata/generation/cases.tsv) covers all generation flags,
+compression/resort combinations, default and feature/omit/undefine SQLite
+configurations, basis/precedence reports, quiet/makeheaders modes, successful
+and failing output directories, explicit/current/adjacent/executable template
+lookup and missing templates. Small fixtures cover alias use/diagnostics,
+major codes, overwrite markers, temporary LHS values, all hook declarations,
+datatype hashing, shared actions/destructors, fallback/wildcard/error metadata,
+empty/missing actions, NEVER-REDUCE, unresolved conflicts and malformed inputs.
+Generated files on error are compared, not discarded. Unchanged-header timestamp
+preservation and stale-header replacement are also tested offline.
+
+Offline Go tests compare inventories and SHA-256 hashes derived only from C;
+they require neither a C compiler nor networking. This avoids duplicating large
+SQLite outputs for every configuration. The explicit differential command
+always rebuilds and compares actual full files and retains failures. C-only
+regeneration independently repeats every case; `--reference-only` reproduces
+the saved expectations without Go. See the [fixture guide](../testdata/generation/README.md).
+
+The arithmetic runtime fixture compiles both generated C files and checks
+`7 - 2 * 3` produces value 1, exactly one acceptance, and no syntax errors.
+This does not claim SQLite integration or exhaustive recovery/destructor/runtime
+coverage. Disposable differential probes additionally matched type-width
+transitions around 127/255 symbols, 80 distinct semantic types with collisions,
+999-byte template chunks/name boundaries, backslash/nested input paths,
+output-directory basenames, and a failing SQL open with partial output.
+Full PATH-only template search and permission-denied distinctions remain
+implemented but not differentially verified. Integer-width boundary choices
+above the exercised ranges are directly translated but not reference-verified.
 
 ## Command-line options
 
@@ -129,18 +167,18 @@ upstream behavior; the following status groups limit the Go claim:
 
 | Options | Go support and verification boundary |
 | --- | --- |
-| `-D`, `-U`, `-E`, `-g`, `-l` | Implemented; differential grammar/preprocessor/reprint coverage. `-l` is verified for stored declaration text, not emitted C. |
+| `-D`, `-U`, `-E`, `-g`, `-l` | Implemented; differential grammar/preprocessor/reprint coverage; defines, undefines and suppressed C line directives also verified in E. |
 | `-x` | Version early exit implemented and differentially verified; does not identify the pin. |
-| `-s` | Implemented and differentially verified in `-g` mode; grammar counts are real, automaton/table counts remain zero as in C's `-g -s`. |
+| `-s` | Differentially verified in `-g` and ordinary generation, including exact C type-size accounting and raw (not padded) lookahead count. |
 | `-f`, `-I`, `-O`, `-W` | Ignored flag-form placeholders implemented and differentially verified with empty/nonempty suffixes. |
-| `-c`, `-r` | Differentially verified table-stage behavior with `--table-snapshot`; accepted without effect in earlier inspection modes, as before. Normal C generation still fails explicitly. |
-| `-b`, `-d`, `-m`, `-p`, `-q`, `-S`, `-T` | Accepted with no effect in grammar-only modes, just as in C; this is differentially verified. Their generation/report/template behavior is not implemented or claimed. Normal generation fails explicitly. |
+| `-c`, `-r` | Differentially verified in table snapshots and generated artifacts; `-r` deliberately retains the pinned zero-state behavior, not a repaired parser. |
+| `-b`, `-d`, `-m`, `-p`, `-q`, `-S`, `-T` | Implemented and differentially verified for full generation/report/template behavior and their lack of effect in grammar-only modes. |
 | `--grammar-snapshot` | Project-only extension, not an upstream option. Stops after inferred precedence assignment. |
 | `--automaton-snapshot` | Project-only extension. Stops after conflict resolution, prints the graph even on automaton errors, returns 1 for errors or unresolved conflicts. Ignores generation/report flags, including `-s`; `-E` and `-x` still exit early. Takes priority over `-g` and `--grammar-snapshot`. |
 | `--table-snapshot` | Project-only extension. Continues through compression, renumbering, and packing; honors `-c`/`-r`, retains snapshots on automaton errors/conflicts with status 1. Like the automaton mode, ignores reporting flags including `-s`; `-E`/`-x` exit early. Takes priority over other snapshot modes and `-g`. |
 
 No grammar-stage byte differences are permitted. Unknown-option syntax and
-upstream help formatting are preserved; generation defaults remain future work.
+upstream help formatting are preserved; ordinary generation is implemented.
 
 | Option | Pinned C behavior |
 | --- | --- |
@@ -200,8 +238,9 @@ The complete keyword dispatch in `parseonetoken` is at **L2600–2690**.
 Every declaration below is **implemented and snapshot-verified for parsing and
 stored metadata**, principally by `features-snapshot` and SQLite cases.
 Precedence, start selection, and token-class automaton effects are additionally
-covered by Milestone C. Effects on generated C and runtime behavior remain
-**not implemented**, even where the upstream description below mentions them.
+covered by Milestone C. Effects on generated C are implemented and covered by
+the E fixtures and SQLite variants. Runtime execution is limited to the smoke
+test above; declaration presence is not exhaustive runtime verification.
 Keywords are case-sensitive. Unknown keywords diagnose.
 
 Most single-argument declarations consume one identifier, quoted argument, or
@@ -271,8 +310,8 @@ state check means the source does not promise comprehensive diagnostics for
 unfinished grammar constructs. Representative malformed-input diagnostics and
 acceptance of an incomplete final rule are differentially verified; exhaustive
 malformed-input/crash equivalence is not claimed. All syntax above is stored by
-the Go parser, but `@ALIAS`, overwrite comments, `$$`, and `error` have no
-rewriting or runtime effects until later milestones.
+the Go parser; E additionally verifies the emitted alias/overwrite/destructor
+rewriting and error-symbol metadata.
 
 ## Grammar preprocessor directives
 
@@ -339,8 +378,8 @@ and covered by Milestone D fixtures:
    intentionally remain untouched when identical (`ReportHeader`, **L5111–5143**).
 6. A generated SQLite `parse.c` is not independently linkable: its grammar
    actions require SQLite headers, functions, types, and runtime compile flags
-   (`parse.y:L24–105`). Generic Lemon generation, compilation of a small parser,
-   and integration with SQLite are different future verification layers.
+   (`parse.y:L24–105`). Generic Lemon generation and a small compiled parser
+   are verified in E; SQLite integration remains a separate future layer.
 7. Runtime macros in C `%include` text are not additional Lemon directives.
    SQLite sets `YYNOERRORRECOVERY`, `YYPARSEFREENEVERNULL`, and
    `YYMALLOCARGTYPE`, and conditionally its engine-on-stack macro
@@ -349,8 +388,6 @@ and covered by Milestone D fixtures:
 
 ## Intentional deviations and exclusions
 
-- Normal parser-generation requests fail with an explicit Milestone D message
-  and no artifacts, rather than running an incomplete emitter.
 - `--grammar-snapshot` is an inspection extension, not a generated parser file.
 - `--automaton-snapshot` is likewise an inspection extension, not `.out` or a
   generated parser. Stage errors preserve C diagnostic text (including extra
@@ -386,6 +423,8 @@ and covered by Milestone D fixtures:
   by `resolve_conflict`). Go retains the start diagnostic and failure status;
   reproducing C aborts is excluded. The RHS-start golden uses right recursion.
 
-There are no unexplained byte differences in the executed grammar, automaton, or table comparisons.
-No generated C/header/report/SQL compatibility or SQLite runtime integration is
-claimed for the Go command. Milestone E requires separate authorization.
+There are no unexplained byte differences in the executed grammar, automaton,
+table, or complete artifact comparisons. Generated C/header/report/SQL
+compatibility is claimed only for the documented matrix and recorded platform.
+SQLite runtime integration and full compatibility sign-off remain unclaimed.
+Milestone F requires separate authorization.

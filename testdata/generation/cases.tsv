@@ -1,0 +1,53 @@
+# name<TAB>operation<TAB>input relative to testdata/generation (or sqlite/missing)<TAB>options
+minimal	generate	../automaton/fixtures/minimal.y	-s
+no-tokens	generate	../automaton/fixtures/no-tokens.y	-s
+nullable-cycle	generate	../automaton/fixtures/nullable-cycle.y
+suffix-first	generate	../automaton/fixtures/suffix-first.y
+lalr-merge	generate	../automaton/fixtures/lalr-merge.y
+precedence	generate	../automaton/fixtures/precedence.y	-p -s
+basis	generate	../automaton/fixtures/precedence.y	-b -p
+no-compress	generate	../automaton/fixtures/precedence.y	-c -s
+no-resort	generate	../automaton/fixtures/precedence.y	-r -s
+no-compress-no-resort	generate	../automaton/fixtures/precedence.y	-c -r -s
+rr-unresolved	generate	../automaton/fixtures/rr-unresolved.y
+rr-equal	generate	../automaton/fixtures/rr-equal.y
+rr-high-first	generate	../automaton/fixtures/rr-high-first.y	-p
+rr-high-second	generate	../automaton/fixtures/rr-high-second.y	-p
+ss-overlap	generate	../automaton/fixtures/ss-overlap.y
+ss-ordered	generate	../automaton/fixtures/ss-ordered.y
+fallback-wildcard-error	generate	../automaton/fixtures/fallback-wildcard-error.y	-S -s
+missing-start	generate	../automaton/fixtures/missing-start.y
+undefined-nonterminal	generate	../automaton/fixtures/undefined-nonterminal.y
+rule-order	generate	../automaton/fixtures/rule-order.y
+conditional	generate	../automaton/fixtures/conditional.y	-DFEATURE -DUNUSED=1 -s
+malformed	generate	../automaton/fixtures/malformed.y
+empty	generate	../automaton/fixtures/empty.y
+missing	generate	missing
+no-code-chain	generate	../tables/fixtures/no-code-chain.y
+empty-action-chain	generate	../tables/fixtures/empty-action-chain.y
+wildcard-default	generate	../tables/fixtures/wildcard-default.y
+default-ties	generate	../tables/fixtures/default-ties.y
+error-shiftreduce	generate	../tables/fixtures/error-shiftreduce.y
+features	generate	../grammar/fixtures/features.y	-S -s
+empty-values	generate	../grammar/fixtures/empty-values.y	-s
+destructor-repeat	generate	../grammar/fixtures/destructor-repeat.y
+actions	generate	fixtures/actions.y	-S -s
+actions-no-lines	generate	fixtures/actions.y	-l
+actions-makeheaders	generate	fixtures/actions.y	-m -s
+actions-quiet	generate	fixtures/actions.y	-q -s
+actions-output-dir	generate	fixtures/actions.y	-dout -S
+actions-bad-output-dir	generate	fixtures/actions.y	-dmissing -S -s
+missing-template	generate	fixtures/actions.y	-Tmissing -s
+explicit-template	generate	fixtures/actions.y	-Tlempar.c
+adjacent-template	adjacent	fixtures/actions.y
+executable-template	executable	fixtures/actions.y
+actions-errors	generate	fixtures/actions-errors.y	-s
+runtime	generate	fixtures/runtime.y
+sqlite-baseline	baseline	sqlite	-S
+sqlite-default	generate	sqlite	-s
+sqlite-no-lines	generate	sqlite	-l -S -s
+sqlite-no-compress	generate	sqlite	-c -s
+sqlite-no-resort	generate	sqlite	-r -s
+sqlite-features	generate	sqlite	-DSQLITE_ENABLE_UPDATE_DELETE_LIMIT -DSQLITE_ENABLE_ORDERED_SET_AGGREGATES -DSQLITE_ENABLE_MATH_FUNCTIONS -S -s
+sqlite-omit	generate	sqlite	-DSQLITE_OMIT_TRIGGER -DSQLITE_OMIT_WINDOWFUNC -DSQLITE_OMIT_VIRTUALTABLE -DSQLITE_OMIT_CTE -s
+sqlite-undefine	generate	sqlite	-DSQLITE_OMIT_TRIGGER -DSQLITE_OMIT_WINDOWFUNC -USQLITE_OMIT_TRIGGER -s
