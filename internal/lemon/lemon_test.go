@@ -21,6 +21,10 @@ func TestAutomatonOracle(t *testing.T) {
 	testOracle(t, "automaton")
 }
 
+func TestTableOracle(t *testing.T) {
+	testOracle(t, "tables")
+}
+
 func testOracle(t *testing.T, stage string) {
 	t.Helper()
 	root, err := filepath.Abs("../..")
@@ -43,6 +47,8 @@ func testOracle(t *testing.T, stage string) {
 		t.Run(name, func(t *testing.T) {
 			args := []string{"./lemon"}
 			switch operation {
+			case "tables":
+				args = append(args, "--table-snapshot")
 			case "automaton":
 				args = append(args, "--automaton-snapshot")
 			case "snapshot":
@@ -61,6 +67,9 @@ func testOracle(t *testing.T, stage string) {
 			t.Chdir(t.TempDir())
 			if input != "missing" {
 				path := filepath.Join(root, "testdata", stage, "fixtures", input)
+				if stage == "tables" {
+					path = filepath.Join(root, "testdata", stage, input)
+				}
 				if input == "sqlite" {
 					path = filepath.Join(root, "reference/sqlite/src/parse.y")
 				}

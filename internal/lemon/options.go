@@ -39,6 +39,7 @@ type options struct {
 	defines, files []string
 	snapshot       bool
 	automaton      bool
+	tables         bool
 }
 
 func parseOptions(args []string, stderr io.Writer) (options, bool) {
@@ -51,6 +52,10 @@ func parseOptions(args []string, stderr io.Writer) (options, bool) {
 		}
 		if a == "--automaton-snapshot" {
 			o.automaton = true
+			continue
+		}
+		if a == "--table-snapshot" {
+			o.tables = true
 			continue
 		}
 		flag := len(a) > 0 && (a[0] == '-' || a[0] == '+')

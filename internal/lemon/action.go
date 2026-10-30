@@ -16,6 +16,8 @@ const (
 	RRConflict
 	SHResolved
 	RDResolved
+	NotUsed
+	ShiftReduce
 )
 
 type Action struct {
@@ -23,11 +25,30 @@ type Action struct {
 	Type   ActionType
 	State  *State
 	Rule   *Rule
+	Opt    *Symbol
 	order  int
 }
 
 func (s *State) addAction(kind ActionType, sym *Symbol, next *State, r *Rule) {
 	s.Actions = append(s.Actions, &Action{Symbol: sym, Type: kind, State: next, Rule: r, order: len(s.Actions)})
+}
+
+func (s *State) sortActions() {
+	sort.Slice(s.Actions, func(i, j int) bool {
+		a, b := s.Actions[i], s.Actions[j]
+		if a.Symbol.Index != b.Symbol.Index {
+			return a.Symbol.Index < b.Symbol.Index
+		}
+		if a.Type != b.Type {
+			return a.Type < b.Type
+		}
+		if (a.Type == Reduce || a.Type == ShiftReduce) && a.Rule.Index != b.Rule.Index {
+			return a.Rule.Index < b.Rule.Index
+		}
+		// C actioncmp breaks ties by reverse allocation address. Use
+		// reverse creation order without depending on Go heap addresses.
+		return a.order > b.order
+	})
 }
 
 func (g *Grammar) FindActions() {
@@ -44,21 +65,7 @@ func (g *Grammar) FindActions() {
 	}
 	g.States[0].addAction(Accept, g.startSymbol(), nil, nil)
 	for _, s := range g.States {
-		sort.Slice(s.Actions, func(i, j int) bool {
-			a, b := s.Actions[i], s.Actions[j]
-			if a.Symbol.Index != b.Symbol.Index {
-				return a.Symbol.Index < b.Symbol.Index
-			}
-			if a.Type != b.Type {
-				return a.Type < b.Type
-			}
-			if a.Type == Reduce && a.Rule.Index != b.Rule.Index {
-				return a.Rule.Index < b.Rule.Index
-			}
-			// C actioncmp breaks ties by reverse allocation address. Use
-			// reverse creation order without depending on Go heap addresses.
-			return a.order > b.order
-		})
+		s.sortActions()
 		for i, a := range s.Actions {
 			for _, b := range s.Actions[i+1:] {
 				if b.Symbol != a.Symbol {

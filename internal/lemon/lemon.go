@@ -63,14 +63,26 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	g.prepare()
-	if o.automaton {
+	if o.automaton || o.tables {
 		g.FindRulePrecedences()
 		g.FindFirstSets()
 		g.FindStates()
 		g.FindLinks()
 		g.FindFollowSets()
 		g.FindActions()
-		g.AutomatonSnapshot(stdout)
+		if o.tables {
+			if !o.flags['c'] {
+				g.CompressTables()
+			}
+			// Like C, -r skips initialization as well as sorting. Do not
+			// silently repair its zero retained-state count.
+			if !o.flags['r'] {
+				g.ResortStates()
+			}
+			g.TableSnapshot(stdout, g.BuildTables())
+		} else {
+			g.AutomatonSnapshot(stdout)
+		}
 		if g.NConflict > 0 {
 			fmt.Fprintf(stderr, "%d parsing conflicts.\n", g.NConflict)
 		}
@@ -85,7 +97,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	} else if o.flags['g'] {
 		g.reprint(stdout)
 	} else {
-		fmt.Fprintln(stderr, "C parser generation is not implemented (Milestone C supports -E, -g, --grammar-snapshot, and --automaton-snapshot only).")
+		fmt.Fprintln(stderr, "C parser generation is not implemented (Milestone D supports -E, -g, --grammar-snapshot, --automaton-snapshot, and --table-snapshot only).")
 		return 1
 	}
 	if o.flags['s'] {

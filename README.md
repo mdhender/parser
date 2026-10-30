@@ -1,10 +1,11 @@
 # parser
 
 A faithful Go port of SQLite's Lemon parser generator, currently at
-**Milestone C: parser automaton**. The Go command preprocesses, scans, and
+**Milestone D: table generation**. The Go command preprocesses, scans, and
 parses Lemon grammars, computes FIRST/nullable sets, constructs LALR states and
-lookaheads, and resolves conflicts, including for SQLite's full grammar. Packed
-tables and C parser generation are not implemented yet; normal generation
+lookaheads, resolves conflicts, compresses and renumbers states, and packs action
+tables, including for SQLite's full grammar. C parser generation is not
+implemented yet; normal generation
 fails explicitly without creating output files. The eventual executable will
 generate C parsers, not Go parsers.
 
@@ -33,6 +34,7 @@ stdout, stderr, exit status, and output-file inventories:
 ```sh
 scripts/test-grammar.sh
 scripts/test-automaton.sh
+scripts/test-tables.sh
 ```
 
 This explicit differential command requires a C compiler, Go, Bash, coreutils,
@@ -48,6 +50,7 @@ CGO_ENABLED=0 go build -o /tmp/lemon ./cmd/lemon
 /tmp/lemon -g reference/sqlite/src/parse.y
 /tmp/lemon --grammar-snapshot reference/sqlite/src/parse.y
 /tmp/lemon --automaton-snapshot reference/sqlite/src/parse.y
+/tmp/lemon --table-snapshot reference/sqlite/src/parse.y
 ```
 
 `-E` prints preprocessed input; `-g` reprints rules without actions in upstream
@@ -59,8 +62,14 @@ resolution, before compression or state renumbering. It emits discovery-order
 states, configurations, lookaheads, actions, and FIRST/nullable sets. Conflicts
 and automaton errors diagnose and return status 1, while retaining the snapshot.
 See [automaton fixtures and format](testdata/automaton/README.md).
+`--table-snapshot` stops after compression, state renumbering, and table packing.
+It emits optimized actions, numeric ranges, offsets, raw packed entries, and
+the five numeric arrays intended for C emission. `-c` disables compression;
+`-r` preserves the pinned C behavior of skipping all state/table-metadata
+initialization, producing zero retained states and empty action tables.
+See [table fixtures and format](testdata/tables/README.md).
 
 See [reference provenance and reproduction](docs/REFERENCE.md),
 [architecture](docs/ARCHITECTURE.md), [porting log](docs/PORTING.md), and
-[compatibility scope](docs/COMPATIBILITY.md). Work stops at Milestone C pending
-authorization for Milestone D.
+[compatibility scope](docs/COMPATIBILITY.md). Work stops at Milestone D pending
+authorization for Milestone E.

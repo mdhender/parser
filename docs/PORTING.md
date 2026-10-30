@@ -164,3 +164,72 @@ implemented.
 - Next recommended task, **only after authorization**: Milestone D, translating
   `CompressTables`, `ResortStates`, `compute_action`, and packed action-table
   placement/offset construction, with new intermediate reference snapshots.
+
+## Milestone D — Table generation
+
+Authorized by the owner's explicit request to implement Milestone D. The pinned
+C sources, template, reference configuration, and Milestone A parser goldens
+remain unchanged. Work stops at numeric tables; no C emitter was implemented.
+
+- Translated routines: `CompressTables` (all three passes), `ResortStates` and
+  `stateResortCompare`, `compute_action`, `acttab_alloc`/`acttab_action`/
+  `acttab_insert`/`acttab_action_size`, `axset_compare`, and the numeric action
+  ranges, packing, post-optimization `doesReduce`, and five-array preparation
+  portions of `ReportTable`.
+- Go implementation: `internal/lemon/table.go`; graph fields in `grammar.go`
+  and `automaton.go`; shared action comparator and NOT_USED/SHIFTREDUCE in
+  `action.go`; project-only `--table-snapshot` in `options.go`/`lemon.go`.
+  Original rule IDs, generated rule IDs, full states, and retained states remain
+  distinct. Numeric arrays are available for the future emitter without C text.
+- Preserved ordering: first encountered most-frequent default reduction, state
+  zero pinned first, descending nonterminal/terminal counts then descending old
+  state number, largest action sets first with original transaction-order ties,
+  backward exact-transaction reuse followed by forward collision-free holes.
+  Missing-lookahead rejection, negative nonterminal offsets, safe terminal
+  placement, raw holes, action trimming, and lookahead padding follow C.
+- `-c` skips optimization but still packs. `-r` skips the whole `ResortStates`
+  call, intentionally retaining C's zero initialized `nxstate` and empty packed
+  action tables rather than silently initializing a repaired parser.
+- Oracle: separate `reference/table-snapshot.c` includes pristine C and copies
+  the original packing/doesReduce block verbatim; no template processing or
+  `translate_code` runs. `scripts/test-tables.sh` checks saved C expectations,
+  fresh C, and Go with equivalent paths/options; stdout, stderr, status, output
+  inventory, bytes, and `diff -bw` must match. All failure artifacts are retained.
+- Offline public-command tests extend the existing oracle runner. The matrix
+  has **48 cases**, including all 33 automaton inputs/configurations, `-c`/`-r`
+  combinations, absent versus explicit-empty action chains, wildcard default
+  suppression, frequency ties opposing rule order, and `error` versus ordinary
+  nonterminal SHIFTREDUCE encoding. Every optimized state/action, rule-use flag,
+  numeric range, offset, raw packed entry, and final numeric array is compared.
+- Executed results: all **48 differential cases** match byte for byte and with
+  `diff -bw`; C-only generation and independent reference-only repeats reproduce
+  all goldens. Default SQLite matches **845 full states, 583 retained states,
+  2,207 action entries, 2,341 raw lookahead entries**, and **2,394 padded
+  lookahead entries**. With `-c`: 845 retained states and 17,281 action entries.
+  Feature/omit/undefine variants match in full; all have zero conflicts.
+- Independent check: every value in the five default-SQLite Go arrays matches
+  the arrays extracted from the pristine Milestone A `parse.c` golden: action
+  2,207; lookahead 2,394; shift offsets 583; reduce offsets 413; defaults 583.
+  This checks numeric contents, not generated-C formatting or runtime behavior.
+- Disposable validation: 24 seeded reachable acyclic grammars, with shuffled
+  rule/token order, nullable alternatives, and mixed missing/empty actions,
+  match C stdout/stderr/status under all four default/`-c`/`-r` combinations
+  (**96 successful table comparisons**). No oracle input crashed or stopped at
+  input rejection. An explicitly missing compiler makes the differential
+  command fail with status 2 instead of skipping.
+- Regression checks: all **58 grammar** and **33 automaton** differential cases
+  remain exact; `scripts/test-reference.sh` reproduces every final C artifact
+  and process result in two independent builds/runs. Offline `go test -count=3
+  ./...` and `go vet ./...` pass with Go 1.27.3, `GOTOOLCHAIN=local`,
+  `GOPROXY=off`, `CGO_ENABLED=0`, and a nonexistent `CC` for the tests. The Go
+  executable is statically linked (`file`; `ldd`: not a dynamic executable).
+- Intentional representation changes: numeric table arrays are prepared
+  independently of C rendering; Go slices replace allocations while preserving
+  the original acttab allocation/search bounds. Existing action-pointer-tie
+  portability exclusions still apply. No unexplained differences were observed.
+- Next recommended task, **only after authorization**: Milestone E. Translate
+  template lookup/copying, output naming/report/header/SQL generation, semantic
+  type selection, alias/destructor/action rewriting, and C emission using pinned
+  `lempar.c`. Include C type-width choices and byte-size statistics; compare
+  complete artifacts against uninstrumented C. Full parser/runtime compatibility
+  and SQLite integration remain unclaimed.

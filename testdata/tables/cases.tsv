@@ -1,0 +1,49 @@
+# name<TAB>operation<TAB>input (relative to testdata/tables, sqlite, missing)<TAB>options
+minimal	tables	../automaton/fixtures/minimal.y
+no-tokens	tables	../automaton/fixtures/no-tokens.y
+nullable-cycle	tables	../automaton/fixtures/nullable-cycle.y
+suffix-first	tables	../automaton/fixtures/suffix-first.y
+lalr-merge	tables	../automaton/fixtures/lalr-merge.y
+precedence	tables	../automaton/fixtures/precedence.y
+sr-no-precedence	tables	../automaton/fixtures/sr-no-precedence.y
+sr-null-rule	tables	../automaton/fixtures/sr-null-rule.y
+sr-unranked-shift	tables	../automaton/fixtures/sr-unranked-shift.y
+sr-unranked-override	tables	../automaton/fixtures/sr-unranked-override.y
+rr-unresolved	tables	../automaton/fixtures/rr-unresolved.y
+rr-equal	tables	../automaton/fixtures/rr-equal.y
+rr-high-first	tables	../automaton/fixtures/rr-high-first.y
+rr-high-second	tables	../automaton/fixtures/rr-high-second.y
+ss-overlap	tables	../automaton/fixtures/ss-overlap.y
+ss-ordered	tables	../automaton/fixtures/ss-ordered.y
+fallback-wildcard-error	tables	../automaton/fixtures/fallback-wildcard-error.y
+explicit-start	tables	../automaton/fixtures/explicit-start.y
+missing-start	tables	../automaton/fixtures/missing-start.y
+rhs-start	tables	../automaton/fixtures/rhs-start.y
+undefined-nonterminal	tables	../automaton/fixtures/undefined-nonterminal.y
+rule-order	tables	../automaton/fixtures/rule-order.y
+conditional-default	tables	../automaton/fixtures/conditional.y
+conditional-defines	tables	../automaton/fixtures/conditional.y	-DFEATURE -DUNUSED=1
+conditional-undefine	tables	../automaton/fixtures/conditional.y	-DFEATURE -UFEATURE -l
+malformed	tables	../automaton/fixtures/malformed.y
+empty	tables	../automaton/fixtures/empty.y
+missing	tables	missing
+sqlite-default	tables	sqlite
+sqlite-no-lines	tables	sqlite	-l
+sqlite-features	tables	sqlite	-DSQLITE_ENABLE_UPDATE_DELETE_LIMIT -DSQLITE_ENABLE_ORDERED_SET_AGGREGATES -DSQLITE_ENABLE_MATH_FUNCTIONS
+sqlite-omit	tables	sqlite	-DSQLITE_OMIT_TRIGGER -DSQLITE_OMIT_WINDOWFUNC -DSQLITE_OMIT_VIRTUALTABLE -DSQLITE_OMIT_CTE
+sqlite-undefine	tables	sqlite	-DSQLITE_OMIT_TRIGGER -DSQLITE_OMIT_WINDOWFUNC -USQLITE_OMIT_TRIGGER
+precedence-no-compress	tables	../automaton/fixtures/precedence.y	-c
+precedence-no-resort	tables	../automaton/fixtures/precedence.y	-r
+precedence-no-compress-no-resort	tables	../automaton/fixtures/precedence.y	-c -r
+sqlite-no-compress	tables	sqlite	-c
+sqlite-no-resort	tables	sqlite	-r
+sqlite-no-compress-no-resort	tables	sqlite	-c -r
+no-code-chain	tables	fixtures/no-code-chain.y
+no-code-chain-no-compress	tables	fixtures/no-code-chain.y	-c
+empty-action-chain	tables	fixtures/empty-action-chain.y
+wildcard-default	tables	fixtures/wildcard-default.y
+wildcard-default-no-compress	tables	fixtures/wildcard-default.y	-c
+default-ties	tables	fixtures/default-ties.y
+default-ties-no-compress	tables	fixtures/default-ties.y	-c
+error-shiftreduce	tables	fixtures/error-shiftreduce.y
+error-shiftreduce-no-compress	tables	fixtures/error-shiftreduce.y	-c

@@ -91,9 +91,14 @@ type Config struct {
 }
 
 type State struct {
-	Number         int
-	Basis, Configs []*Config
-	Actions        []*Action
+	Number            int
+	Basis, Configs    []*Config
+	Actions           []*Action
+	NTknAct, NNtAct   int
+	ITknOfst, INtOfst int
+	IDfltReduce       int
+	DefaultReduce     *Rule
+	AutoReduce        bool
 }
 
 type configKey struct{ rule, dot int }

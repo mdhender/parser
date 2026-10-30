@@ -1,0 +1,1 @@
+grammar.y:0: The specified start symbol "absent" is not in a nonterminal of the grammar.  "start" will be used as the start symbol instead.

@@ -1,0 +1,53 @@
+tables	7	4	4	4	3	0
+codes	4	8	9	10	11	15
+bounds	0	5	-4	0
+sizes	6	10
+rule	0	1
+rule	1	1
+rule	2	0
+rule	3	1
+state	0	1	3	0	-4	-1	0	-1
+action	3	10	3	-1	7
+action	4	1	-	-1	9
+action	5	0	2	-1	2
+action	6	0	1	-1	1
+state	1	1	0	4	-2147483647	-1	0	-1
+action	0	2	1	-1	12
+state	2	1	0	5	-2147483647	-1	0	-1
+action	0	2	0	-1	11
+state	3	0	0	-2147483647	-2147483647	3	1	3
+action	0	8	2	-1	-1
+action	7	2	3	-1	14
+entry	0	4	9
+entry	1	5	2
+entry	2	6	1
+entry	3	3	7
+entry	4	0	12
+entry	5	0	11
+entry	6	-1	-1
+entry	7	-1	-1
+entry	8	-1	-1
+entry	9	-1	-1
+yy-action	0	9
+yy-action	1	2
+yy-action	2	1
+yy-action	3	7
+yy-action	4	12
+yy-action	5	11
+yy-lookahead	0	4
+yy-lookahead	1	5
+yy-lookahead	2	6
+yy-lookahead	3	3
+yy-lookahead	4	0
+yy-lookahead	5	0
+yy-lookahead	6	7
+yy-lookahead	7	7
+yy-lookahead	8	7
+yy-lookahead	9	7
+yy-shift	0	0
+yy-shift	1	4
+yy-shift	2	5
+yy-reduce	0	-4
+yy-default	0	8
+yy-default	1	8
+yy-default	2	8

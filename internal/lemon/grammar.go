@@ -1,6 +1,6 @@
-// Package lemon implements grammar processing and automaton construction for
-// SQLite's Lemon. The authoritative source is reference/sqlite/tool/lemon.c;
-// table packing and C output construction are not implemented yet.
+// Package lemon implements grammar processing, automaton construction, and
+// table packing for SQLite's Lemon. The authoritative source is
+// reference/sqlite/tool/lemon.c; C output construction is not implemented yet.
 package lemon
 
 import (
@@ -60,30 +60,33 @@ type Rule struct {
 	NextLHS     *Rule
 	LHSStart    bool
 	CanReduce   bool
+	DoesReduce  bool
 }
 
 // Grammar owns all mutable state for one invocation. Maps are used only for
 // lookup; ordered slices preserve the C associative arrays' insertion order.
 type Grammar struct {
-	Filename                                                           string
-	Symbols                                                            []*Symbol
-	Rules                                                              []*Rule
-	StartRule                                                          *Rule
-	States                                                             []*State
-	NConflict                                                          int
-	ErrorSymbol, Wildcard                                              *Symbol
-	NSymbol, NTerminal, NRuleWithAction                                int
-	HasFallback                                                        bool
-	Name, Include, ExtraCode, TokenDestructor, DefaultDestructor       *string
-	TokenPrefix, SyntaxError, ParseAccept, ParseFailure, StackOverflow *string
-	ExtraArgument, ExtraContext, TokenType, DefaultType                *string
-	Realloc, Free, StackSize, StartSymbol                              *string
-	byName                                                             map[string]*Symbol
-	defines                                                            []string
-	defineUsed                                                         []bool
-	noLineNumbers                                                      bool
-	errors                                                             int
-	stderr                                                             io.Writer
+	Filename                                                             string
+	Symbols                                                              []*Symbol
+	Rules                                                                []*Rule
+	StartRule                                                            *Rule
+	States                                                               []*State
+	NConflict                                                            int
+	NXState                                                              int
+	MinShiftReduce, ErrAction, AccAction, NoAction, MinReduce, MaxAction int
+	ErrorSymbol, Wildcard                                                *Symbol
+	NSymbol, NTerminal, NRuleWithAction                                  int
+	HasFallback                                                          bool
+	Name, Include, ExtraCode, TokenDestructor, DefaultDestructor         *string
+	TokenPrefix, SyntaxError, ParseAccept, ParseFailure, StackOverflow   *string
+	ExtraArgument, ExtraContext, TokenType, DefaultType                  *string
+	Realloc, Free, StackSize, StartSymbol                                *string
+	byName                                                               map[string]*Symbol
+	defines                                                              []string
+	defineUsed                                                           []bool
+	noLineNumbers                                                        bool
+	errors                                                               int
+	stderr                                                               io.Writer
 }
 
 func (g *Grammar) symbol(name string) *Symbol {

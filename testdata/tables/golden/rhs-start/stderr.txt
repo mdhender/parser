@@ -1,0 +1,1 @@
+grammar.y:0: The start symbol "start" occurs on the right-hand side of a rule. This will result in a parser which does not work properly.

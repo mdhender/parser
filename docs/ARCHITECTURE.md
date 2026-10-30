@@ -1,12 +1,11 @@
-# Pinned Lemon architecture — Milestone C
+# Pinned Lemon architecture — Milestone D
 
 ## Scope and evidence
 
 This document describes the complete C pipeline and the implemented Go grammar
-front end and parser automaton. Milestone C extends Milestone B with nullable
-and FIRST sets, configuration closure, discovery-order states, LALR lookahead
-propagation, and conflict resolution. Table compression/packing, state
-renumbering, C emission, and a parser runtime are not Go features yet.
+front end, parser automaton, and numeric tables. Milestone D adds default/shift-
+reduce compression, state renumbering, and packed action/offset construction.
+C emission and a parser runtime are not Go features yet.
 C code embedded in grammars remains opaque text.
 
 The reference is SQLite **3.50.4**, Fossil revision
@@ -37,6 +36,7 @@ exits with its status. Everything else lives in `internal/lemon`:
 | `output.go` | `Reprint`/`rule_print` and project-only deterministic snapshot serialization. |
 | `automaton.go` | Byte sets, `FindFirstSets`, configuration builder/closure, `FindStates`/`getstate`/`buildshifts`, `same_symbol`, `FindLinks`, `FindFollowSets`. |
 | `action.go` | `Action_add`/`Action_sort`, `FindActions`, `resolve_conflict`, original action enum values and retained loser actions. |
+| `table.go` | `CompressTables`, `ResortStates`/`stateResortCompare`, `compute_action`, `acttab` allocation/action/insertion/sizing, and `ReportTable` numeric packing/array preparation and table snapshots. |
 
 All mutable tables, define usage, parser state, and diagnostics belong to one
 invocation; unlike C's process statics, repeated Go calls do not share state.
@@ -75,6 +75,16 @@ appear out of enum order. Equal-symbol/type shift ties use reverse creation
 order rather than Go heap addresses. C's final pointer tie-break is only
 portable within an allocation block; cross-block ties are not a portable C
 contract (see compatibility exclusions).
+
+`--table-snapshot` continues through `CompressTables` (unless `-c`),
+`ResortStates` (unless `-r`), and `BuildTables`. `Tables` owns the five numeric
+arrays and retains raw packed entries and offset bounds for inspection. State
+objects retain identity while `States` is reordered, so incoming SHIFT targets
+automatically see renumbered IDs. Rule `Index` remains the original identity;
+numeric reductions use `IRule`. The table driver copies the packing block from
+`ReportTable` without running template processing or code translation. No C
+types, table byte-size accounting, fallback-array emission, or C text rendering
+are implemented in D. See [table snapshots](../testdata/tables/README.md).
 
 ## 1. Main execution flow
 
@@ -278,9 +288,11 @@ There are several distinct orderings; they are not interchangeable:
 
 **Pinned-source caveat:** `-r` skips the *whole* `ResortStates` call, not just
 sorting. That also skips initialization of `nxstate`, action counts, offsets,
-and default metadata. `lem` starts zeroed. Do not assume `-r` is a sound
-“same parser, original numbering” baseline without a separate executable
-fixture (`L1792`, `L1879`, `L5293–5330`). This milestone has not run that fixture.
+and default metadata. `lem` starts zeroed. It is not a sound “same parser,
+original numbering” baseline (`L1792`, `L1879`, `L5293–5330`). Milestone D
+fixtures verify this exact behavior: zero retained states, no packed entries,
+empty action/offset/default arrays, and a terminal-count-sized padded lookahead
+array. Go intentionally does not repair the pinned implementation.
 
 ## 8. Packed table construction and numeric encoding
 

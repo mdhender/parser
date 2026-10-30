@@ -1,12 +1,12 @@
-# Pinned Lemon compatibility — Milestone C
+# Pinned Lemon compatibility — Milestone D
 
 ## Status and pin
 
-**Grammar processing and parser automaton construction are implemented and
+**Grammar processing, parser automaton construction, and table generation are implemented and
 reference-verified for the cases below. C parser generation is not implemented;
 no parser-output or runtime compatibility is claimed.** Milestone A's reference
 baseline remains unchanged.
-Milestones B and C add the Go executable, offline grammar/automaton goldens,
+Milestones B through D add the Go executable, offline grammar/automaton/table goldens,
 and explicit C-versus-Go differential checks.
 
 Reference: SQLite **3.50.4**, Fossil revision
@@ -53,8 +53,8 @@ syntax/exclusion errors, missing input, empty input, and invalid options.
 The 1000/1001 RHS-symbol boundary is also covered through the Go command API.
 
 Repeated offline runs check determinism and isolation between invocations.
-Unimplemented stages are tables/compression, state renumbering, alias rewriting,
-C/template emission, and runtime validation. Parsing hooks and destructors does
+Unimplemented stages are alias rewriting, C/template emission, and runtime
+validation. Parsing hooks and destructors does
 not implement their emitter/runtime effects.
 
 ### Milestone C automaton comparisons
@@ -85,6 +85,43 @@ counts, not the number of states retained by later table optimization.
 Fallback/wildcard metadata and `error` transitions are covered; runtime fallback,
 wildcard dispatch, and error recovery still await generated C and runtime tests.
 
+### Milestone D table comparisons
+
+`scripts/test-tables.sh` compares **48 cases** against C-generated goldens and
+freshly built C: all 33 automaton cases, six additional small/SQLite `-c`/`-r`
+combinations, and nine targeted cases. It uses the same isolated-path,
+stdout/stderr/status/inventory, byte and `diff -bw` policy. C-only regeneration
+and independent repeat modes are explicit; ordinary Go tests use saved goldens
+offline. See the [table matrix](../testdata/tables/cases.tsv) and
+[snapshot schema](../testdata/tables/README.md).
+
+The comparison includes all states after renumbering (including removed tails),
+optimized actions and chain-bypass annotations, generated numeric action codes,
+default rules, post-optimization reducibility, action counts, offset sentinels
+and bounds, raw packed entries/holes, and every value of the final action,
+padded lookahead, shift-offset, reduce-offset, and default arrays. Targeted
+fixtures distinguish first-encountered default-frequency ties from rule order,
+wildcard default suppression, absent versus explicit-empty code, multi-step
+chain bypass, and the special `error` SHIFTREDUCE encoding.
+
+Default SQLite matches **845 total states, 583 retained states, 2,207 action
+entries, 2,341 raw lookahead entries, and 2,394 padded lookahead entries**.
+All five Go numeric arrays also match every extracted value of the pristine
+C-generated Milestone A `parse.c` baseline (2,207 / 2,394 / 583 / 413 / 583
+values respectively). This validates numeric contents, not C text generation.
+With `-c`, all 845 states remain and the action table has 17,281 entries.
+With `-r`, C and Go retain zero states and pack no entries: the pinned behavior
+skips initialization, not just sorting. It is intentionally not repaired.
+SQLite feature/omit/undefine configurations also match in full.
+
+Additional disposable validation compared 24 seeded, reachable, acyclic grammars
+under default, `-c`, `-r`, and `-c -r` (96 successful comparisons). Tokens/rules
+were permuted, nullable alternatives varied, and absent/empty actions mixed;
+all cases reached table construction and matched stdout, stderr, and status.
+No differences are normalized or permitted. C type selection, byte-size
+accounting, template processing, and generated parser runtime remain Milestone E
+or later, not part of the numeric-table claim.
+
 ## Command-line options
 
 The complete `main.options` table is at **L1753–1780**. The table inventories
@@ -96,9 +133,11 @@ upstream behavior; the following status groups limit the Go claim:
 | `-x` | Version early exit implemented and differentially verified; does not identify the pin. |
 | `-s` | Implemented and differentially verified in `-g` mode; grammar counts are real, automaton/table counts remain zero as in C's `-g -s`. |
 | `-f`, `-I`, `-O`, `-W` | Ignored flag-form placeholders implemented and differentially verified with empty/nonempty suffixes. |
-| `-b`, `-c`, `-d`, `-m`, `-p`, `-q`, `-r`, `-S`, `-T` | Accepted with no effect in grammar-only modes, just as in C; this is differentially verified. Their generation/report/template behavior is not implemented or claimed. Normal generation fails explicitly. |
+| `-c`, `-r` | Differentially verified table-stage behavior with `--table-snapshot`; accepted without effect in earlier inspection modes, as before. Normal C generation still fails explicitly. |
+| `-b`, `-d`, `-m`, `-p`, `-q`, `-S`, `-T` | Accepted with no effect in grammar-only modes, just as in C; this is differentially verified. Their generation/report/template behavior is not implemented or claimed. Normal generation fails explicitly. |
 | `--grammar-snapshot` | Project-only extension, not an upstream option. Stops after inferred precedence assignment. |
 | `--automaton-snapshot` | Project-only extension. Stops after conflict resolution, prints the graph even on automaton errors, returns 1 for errors or unresolved conflicts. Ignores generation/report flags, including `-s`; `-E` and `-x` still exit early. Takes priority over `-g` and `--grammar-snapshot`. |
+| `--table-snapshot` | Project-only extension. Continues through compression, renumbering, and packing; honors `-c`/`-r`, retains snapshots on automaton errors/conflicts with status 1. Like the automaton mode, ignores reporting flags including `-s`; `-E`/`-x` exit early. Takes priority over other snapshot modes and `-g`. |
 
 No grammar-stage byte differences are permitted. Unknown-option syntax and
 upstream help formatting are preserved; generation defaults remain future work.
@@ -275,7 +314,8 @@ preprocessing for the generated file, not Lemon conditional syntax.
 
 ## Baseline pitfalls and verification boundary
 
-These are source-derived cautions, **not executed test results**:
+These are source-derived cautions; the `-r` numeric behavior is now executed
+and covered by Milestone D fixtures:
 
 1. Pin both generator and template. Default template search includes a
    grammar-adjacent `.lt`, current-directory `lempar.c`, and executable/PATH
@@ -284,8 +324,8 @@ These are source-derived cautions, **not executed test results**:
    `-x` alone cannot verify the reference revision.
 2. `-r` bypasses initialization work as well as sorting: `nxstate`, action
    counts, offsets, and default rule numbers are established only by
-   `ResortStates` (**L1876–1879**, **L5293–5330**). Isolate this option in a
-   baseline fixture; do not silently repair its behavior and call it matched.
+   `ResortStates` (**L1876–1879**, **L5293–5330**). Small and SQLite table
+   fixtures verify zero retained states; Go does not silently repair this.
 3. `-S` emits grammar metadata only and changes the shared current `outname`
    when `.sql` is opened; later `#line` restoration uses that field
    (**L3337–3356**, **L4454–4534**, **L3831–3847**). Compare its generated C
@@ -309,12 +349,15 @@ These are source-derived cautions, **not executed test results**:
 
 ## Intentional deviations and exclusions
 
-- Normal parser-generation requests fail with an explicit Milestone C message
-  and no artifacts, rather than running an incomplete automaton/emitter.
+- Normal parser-generation requests fail with an explicit Milestone D message
+  and no artifacts, rather than running an incomplete emitter.
 - `--grammar-snapshot` is an inspection extension, not a generated parser file.
 - `--automaton-snapshot` is likewise an inspection extension, not `.out` or a
   generated parser. Stage errors preserve C diagnostic text (including extra
   newlines for unreducible rules) and the boolean post-automaton exit status.
+- `--table-snapshot` is also an inspection extension, not generated C. Numeric
+  arrays are prepared separately from C rendering; neither emission-time action
+  rewriting nor its diagnostics run. Original `NoCode` determines compression.
 - Config builders and graph objects are per invocation rather than process
   statics/allocation pools. Propagation links are slices; their visitation order
   differs but the fixed-point sets and discovery/action order match the matrix.
@@ -343,6 +386,6 @@ These are source-derived cautions, **not executed test results**:
   by `resolve_conflict`). Go retains the start diagnostic and failure status;
   reproducing C aborts is excluded. The RHS-start golden uses right recursion.
 
-There are no unexplained byte differences in the executed grammar or automaton comparisons.
+There are no unexplained byte differences in the executed grammar, automaton, or table comparisons.
 No generated C/header/report/SQL compatibility or SQLite runtime integration is
-claimed for the Go command. Milestone D requires separate authorization.
+claimed for the Go command. Milestone E requires separate authorization.

@@ -193,6 +193,32 @@ describes the schema and explicit regeneration/repetition commands. These
 intermediate comparisons do not replace final parser artifact acceptance.
 Milestone A's sources, invocation, and artifact hashes below are unchanged.
 
+## Milestone D table oracle
+
+`reference/table-snapshot.c` includes the same pristine pin and continues the
+automaton initialization through `CompressTables` (unless `-c`) and
+`ResortStates` (unless `-r`). It copies the original `ReportTable` numeric
+ranges, axset/acttab packing, and `doesReduce` blocks, then serializes optimized
+states/actions, numeric codes, raw entries, offset metadata, and final numeric
+arrays without invoking templates or C-code rewriting. The source and template
+hashes, selected configuration, and final-artifact goldens remain unchanged.
+
+`scripts/test-tables.sh` builds the driver with `${CC:-cc} -o EXECUTABLE SOURCE`
+and Go with `CGO_ENABLED=0`, using the same offline environment, isolated
+`grammar.y` paths, `./lemon` name, strict byte and `diff -bw` checks, and failure
+retention policy as the earlier harnesses. Its restricted options are `c`, `D`,
+`l`, `r`, and `U`; full CLI diagnostics remain tested against pristine C by the
+grammar harness. The [table fixture guide](../testdata/tables/README.md) records
+the schema, 48-case matrix, C-only regeneration/repetition commands, and counts.
+
+As an independent numeric cross-check, all five arrays prepared by Go for the
+default SQLite grammar were compared with their values in the uninstrumented
+Milestone A `parse.c` golden: `yy_action` (2,207), `yy_lookahead` (2,394),
+`yy_shift_ofst` (583), `yy_reduce_ofst` (413), and `yy_default` (583). Every
+integer matched. This comparison extracted only array initializers and removed
+C index comments; it did not normalize an artifact comparison or establish
+generated-C text compatibility. Full output acceptance still awaits Milestone E/F.
+
 ## Golden artifact hashes
 
 `testdata/golden/sqlite/SHA256SUMS` records all expected outputs:

@@ -1,0 +1,28 @@
+tables	3	2	1	2	2	0
+codes	2	3	4	5	6	7
+bounds	0	2	-2	0
+sizes	3	5
+rule	0	1
+state	0	1	1	0	-2	-1	0	-1
+action	1	0	1	-1	1
+action	2	1	-	-1	4
+state	1	1	0	2	-2147483647	-1	0	-1
+action	0	2	0	-1	6
+entry	0	2	4
+entry	1	1	1
+entry	2	0	6
+entry	3	-1	-1
+entry	4	-1	-1
+yy-action	0	4
+yy-action	1	1
+yy-action	2	6
+yy-lookahead	0	2
+yy-lookahead	1	1
+yy-lookahead	2	0
+yy-lookahead	3	3
+yy-lookahead	4	3
+yy-shift	0	0
+yy-shift	1	2
+yy-reduce	0	-2
+yy-default	0	3
+yy-default	1	3
