@@ -1,0 +1,3 @@
+recovery value=24 wild=11 recovered=1 accepted=1 errors=1 failed=0 tokens=13 values=0
+failure value=0 wild=0 recovered=0 accepted=0 errors=1 failed=1 tokens=0 values=19
+teardown value=31 wild=0 recovered=0 accepted=0 errors=1 failed=0 tokens=29 values=23

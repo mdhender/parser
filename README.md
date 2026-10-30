@@ -1,13 +1,15 @@
 # parser
 
 A faithful Go port of SQLite's Lemon parser generator, currently at
-**Milestone E: C code generation**. The Go command preprocesses, scans, and
-parses Lemon grammars, computes FIRST/nullable sets, constructs LALR states and
-lookaheads, resolves conflicts, compresses and renumbers states, and packs action
-tables, including for SQLite's full grammar. It uses the original `lempar.c`
-template to generate C parsers, headers, reports, and optional SQL metadata.
-The pinned SQLite baseline matches byte for byte; full compatibility and SQLite
-runtime integration remain Milestone F work.
+**Milestone F: final pinned-reference compatibility**. The Go command
+preprocesses, scans, and parses Lemon grammars, computes FIRST/nullable sets,
+constructs LALR states and lookaheads, resolves conflicts, compresses and renumbers
+states, and packs action tables, including for SQLite's full grammar. It uses the
+original `lempar.c` template to generate C parsers, headers, reports, and optional
+SQL metadata.
+The pinned SQLite baseline matches byte for byte, with no unexplained output
+differences. Supplementary runtime checks exercise generated parsers and the
+corresponding SQLite source-tree build; see the documented compatibility scope.
 
 The reference is pinned to SQLite 3.50.4. Pristine sources and golden outputs
 are committed; tests do not download anything or update fixtures.
@@ -42,6 +44,29 @@ This explicit differential command requires a C compiler, Go, Bash, coreutils,
 and diffutils. Both byte comparison and `diff -bw` must pass; failures retain
 their full inputs and outputs. Ordinary Go tests use checked-in C expectations
 and never execute C or download dependencies.
+
+Final acceptance (Linux ELF; also requires `readelf` from binutils) runs all
+of the above, repeats offline Go tests, and generates the SQLite baseline twice
+with no compiler or utilities on the executable's PATH:
+
+```sh
+scripts/test-compatibility.sh
+```
+
+To additionally build SQLite and run selected unmodified upstream regressions,
+provide the local, hash-verified official SQLite 3.50.4 source archive. This
+requires make, unzip, and Tcl runtime/development files; it never downloads:
+
+```sh
+scripts/test-compatibility.sh /absolute/path/to/sqlite-src-3500400.zip
+# Or run just the supplementary integration:
+scripts/test-sqlite.sh /absolute/path/to/sqlite-src-3500400.zip
+```
+
+See [SQLite integration details](testdata/sqlite/README.md) for provenance,
+prerequisites, build configuration, test selection, and failure reproduction.
+Passing these checks is not a claim of exhaustive SQLite feature/platform or
+undefined-C behavior compatibility.
 
 ## Use the implemented stages
 
@@ -81,5 +106,5 @@ is a runtime input. See [generation fixtures](testdata/generation/README.md).
 
 See [reference provenance and reproduction](docs/REFERENCE.md),
 [architecture](docs/ARCHITECTURE.md), [porting log](docs/PORTING.md), and
-[compatibility scope](docs/COMPATIBILITY.md). Work stops at Milestone E pending
-authorization for Milestone F.
+[compatibility scope](docs/COMPATIBILITY.md). Milestones A through F are complete
+for the pinned reference and documented validation matrix.

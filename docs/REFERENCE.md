@@ -245,7 +245,66 @@ files, not just hashes, and retain full failure artifacts. C-only update/repeat
 and reference-only modes are documented in the
 [fixture guide](../testdata/generation/README.md). The runtime case additionally
 compiles and executes a small arithmetic parser; this does not compile SQLite
-or establish its runtime compatibility. Final Milestone F sign-off remains open.
+or establish its runtime compatibility. Milestone F extends this evidence below.
+
+## Milestone F final acceptance
+
+From the repository root on Linux ELF with the tools above, Go 1.27.3, and
+binutils `readelf`:
+
+```sh
+scripts/test-compatibility.sh
+```
+
+This command runs offline Go tests three times and vet with cgo disabled and a
+nonexistent C compiler. It builds Go Lemon, rejects an ELF dynamic interpreter,
+then runs the exact baseline `./lemon -S parse.y` in two fresh directories with
+`PATH=/nonexistent` and `CC=/nonexistent/compiler`. Both runs match every artifact
+hash below and all captured process results under strict byte comparison and
+`diff -bw`, and match one another. It then runs all five existing reference and
+differential scripts. The complete matrix now contains 58 grammar, 33 automaton,
+48 table, and **57 full-generation cases**, with no unexplained byte differences.
+All original source and baseline golden hashes are unchanged.
+
+Generation now compiles and executes six runtime configurations from both
+generators, each with assertions enabled and with `-DNDEBUG`. Besides arithmetic,
+these cover fallback/wildcard, recovery and EOF failure, token/nonterminal
+destruction, 400 nested pairs on a dynamic stack, and fixed-stack overflow/reuse.
+Recovery and dynamic stacks also run without compression. The C-confirmed runtime
+expectations and the observed compression-dependent reduction timing are
+documented in [the fixture guide](../testdata/generation/README.md).
+
+Optional supplementary source-tree integration, using the local official archive
+whose provenance/hash is recorded at the top of this document:
+
+```sh
+scripts/test-sqlite.sh /absolute/path/to/sqlite-src-3500400.zip
+# Or include it in final acceptance:
+scripts/test-compatibility.sh /absolute/path/to/sqlite-src-3500400.zip
+```
+
+No test downloads an archive. The integration script verifies its hash/check-in
+and byte identity of all pinned inputs, invokes default upstream `configure`,
+extracts the actual makefile `OPT_FEATURE_FLAGS`/`OPTS`, and compares pristine C
+and Go artifacts with those exact arguments and equivalent paths. It replaces
+only build-tree Lemon/parser outputs, builds SQLite and `testfixture`, checks that
+the Go executable/artifacts remain installed, and runs selected unmodified
+upstream Tcl regressions in isolated directories. See
+[integration requirements, test selection, and reproduction](../testdata/sqlite/README.md).
+The script records environment, expanded command/flags, configure and build logs,
+byte/whitespace diffs, CLI version/compile options, and per-test stdout/stderr/status.
+Failures retain the full source/build/test trees and print a reproduction command;
+`KEEP_WORK=1` also retains successful integration runs. These are supplementary
+runtime checks, not replacements for the pinned golden acceptance criterion.
+
+Executed integration configuration: Linux x86_64, GCC 12.2.0, GNU Make 4.3,
+Tcl 8.6.13, Go 1.27.3; default `configure` without options. The expanded parser
+invocation was `./lemon -DSQLITE_ENABLE_MATH_FUNCTIONS -DSQLITE_THREADSAFE=1 -S parse.y`.
+All four artifacts matched both pristine C and the unchanged baseline hashes.
+`make all testfixture` succeeded, and all 13 selected upstream files reported
+**2,534 tests, zero errors**. Upstream's default libraries/CLI and testfixture
+use their respective original compile settings; this is not a feature-matrix
+or full SQLite `releasetest` claim.
 
 ## Golden artifact hashes
 

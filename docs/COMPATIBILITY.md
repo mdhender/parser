@@ -1,13 +1,14 @@
-# Pinned Lemon compatibility — Milestone E
+# Pinned Lemon compatibility — Milestone F
 
 ## Status and pin
 
 **Grammar processing, parser automaton construction, table generation, and C
-emission are implemented and reference-verified for the cases below.** All four
-pinned SQLite baseline artifacts match byte for byte. Milestone A's sources and
-goldens remain unchanged. Milestone F's final compatibility campaign and SQLite
-runtime integration are not complete; a small generated arithmetic parser is
-compiled and executed as supplementary evidence only.
+emission are implemented and reference-verified for the cases below. Milestone F
+passes the final pinned-output acceptance criterion.** All four pinned SQLite
+baseline artifacts match byte for byte, not just under `diff -bw`. Milestone A's
+sources and goldens remain unchanged. Generated-parser execution and a matching
+SQLite source-tree build/test campaign provide supplementary evidence; this is
+not a claim of exhaustive Lemon or SQLite feature/platform compatibility.
 
 Reference: SQLite **3.50.4**, Fossil revision
 `4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3`.
@@ -82,7 +83,7 @@ normalization. Default SQLite matches **323 symbols, 187 terminals, 409 rules,
 845 discovery-order states, zero conflicts**. These are uncompressed automaton
 counts, not the number of states retained by later table optimization.
 Fallback/wildcard metadata and `error` transitions are covered; runtime fallback,
-wildcard dispatch, and error recovery still await dedicated runtime tests.
+wildcard dispatch, and error recovery are covered separately by the F tests below.
 
 ### Milestone D table comparisons
 
@@ -121,10 +122,10 @@ No differences are normalized or permitted. C type selection, byte-size
 accounting and template processing are verified separately by E, not by the
 numeric-table snapshots. Generated runtime verification remains limited.
 
-### Milestone E complete artifact comparisons
+### Milestones E/F complete artifact comparisons
 
 `scripts/test-generation.sh` uses **uninstrumented pristine C Lemon** and the
-pinned `lempar.c`. All **52 cases** compare stdout, stderr, exit status, complete
+pinned `lempar.c`. All **57 cases** compare stdout, stderr, exit status, complete
 artifact inventories, exact bytes, and `diff -bw` in equivalent isolated paths.
 The `sqlite-baseline` case uses the exact `./lemon -S parse.y` invocation and
 compares C artifacts against the unchanged Milestone A goldens before comparing
@@ -151,14 +152,56 @@ the saved expectations without Go. See the [fixture guide](../testdata/generatio
 
 The arithmetic runtime fixture compiles both generated C files and checks
 `7 - 2 * 3` produces value 1, exactly one acceptance, and no syntax errors.
-This does not claim SQLite integration or exhaustive recovery/destructor/runtime
-coverage. Disposable differential probes additionally matched type-width
-transitions around 127/255 symbols, 80 distinct semantic types with collisions,
+Milestone F extends the original 52 cases with five recovery/stack configurations
+described below. Disposable Milestone E differential probes additionally matched
+type-width transitions around 127/255 symbols, 80 distinct semantic types with collisions,
 999-byte template chunks/name boundaries, backslash/nested input paths,
 output-directory basenames, and a failing SQL open with partial output.
 Full PATH-only template search and permission-denied distinctions remain
 implemented but not differentially verified. Integer-width boundary choices
 above the exercised ranges are directly translated but not reference-verified.
+
+### Milestone F final acceptance and runtime checks
+
+`scripts/test-compatibility.sh` runs offline `go test -count=3 ./...`,
+`go vet ./...`, a cgo-disabled build, the independent C baseline, and all **58 grammar,
+33 automaton, 48 table, and 57 full-generation differential cases**. It generates
+the exact `./lemon -S parse.y` baseline twice with `PATH=/nonexistent` and an
+unusable `CC`, comparing every artifact and process result against the original
+goldens and each other using strict bytes and `diff -bw`. `readelf -l` confirms
+there is no ELF dynamic interpreter. No output normalization or permitted
+formatting differences are needed. The executable uses only the Go standard
+library; a C compiler is required for the explicit oracle checks, not execution.
+
+Six generated-runtime configurations run both pristine-C and Go output, with
+assertions enabled and with `-DNDEBUG`: arithmetic precedence; fallback/wildcard,
+recovery/continuation, EOF failure and token/nonterminal destruction (compressed
+and `-c`); 400 nested pairs on a dynamic stack (compressed and `-c`); and an
+eight-entry fixed stack's overflow/destruction/reuse. Full runtime output must
+match checked expectations. The [fixture guide](../testdata/generation/README.md)
+explains why pristine C's `-c` recovery timing changes which reductions and
+destructors run. C and Go agree in each configuration; this is not an output
+difference being excused.
+
+The optional `scripts/test-sqlite.sh ARCHIVE` verifies the official source archive
+hash/check-in and all pinned inputs, reads the actual configured generation
+flags, compares all C/Go artifacts and process results, and compiles Go-generated
+output into SQLite's default source-tree build and upstream Tcl testfixture.
+It runs the unmodified regression files listed in
+[`upstream-tests.txt`](../testdata/sqlite/upstream-tests.txt), independently in
+fresh working directories, requiring successful status and nonempty zero-error
+summaries. The source archive is a local input; tests never download it. The
+[integration guide](../testdata/sqlite/README.md) gives requirements, exact build
+policy, retained failure evidence, and reproduction instructions. This is a
+selected regression campaign, not all SQLite `releasetest` or feature combinations.
+
+Executed on Linux x86_64 with Go 1.27.3, GCC 12.2.0, GNU Make 4.3 and Tcl 8.6.13:
+the default SQLite 3.50.4 build and all **13 selected regression files / 2,534
+tests passed with zero errors**. Configured generation added
+`-DSQLITE_ENABLE_MATH_FUNCTIONS -DSQLITE_THREADSAFE=1` before `-S parse.y`; all
+artifacts still matched the original baseline goldens. The production default
+build and upstream testfixture's distinct compile flags are both retained in
+the build logs; neither is evidence of every possible compile-time setting.
 
 ## Command-line options
 
@@ -239,8 +282,8 @@ Every declaration below is **implemented and snapshot-verified for parsing and
 stored metadata**, principally by `features-snapshot` and SQLite cases.
 Precedence, start selection, and token-class automaton effects are additionally
 covered by Milestone C. Effects on generated C are implemented and covered by
-the E fixtures and SQLite variants. Runtime execution is limited to the smoke
-test above; declaration presence is not exhaustive runtime verification.
+the generation fixtures and SQLite variants. Runtime execution covers the F
+campaign above; declaration presence is not exhaustive runtime verification.
 Keywords are case-sensitive. Unknown keywords diagnose.
 
 Most single-argument declarations consume one identifier, quoted argument, or
@@ -378,8 +421,8 @@ and covered by Milestone D fixtures:
    intentionally remain untouched when identical (`ReportHeader`, **L5111–5143**).
 6. A generated SQLite `parse.c` is not independently linkable: its grammar
    actions require SQLite headers, functions, types, and runtime compile flags
-   (`parse.y:L24–105`). Generic Lemon generation and a small compiled parser
-   are verified in E; SQLite integration remains a separate future layer.
+   (`parse.y:L24–105`). Generic Lemon generation is verified by artifact checks;
+   F's explicit integration script compiles the parser in the pinned source tree.
 7. Runtime macros in C `%include` text are not additional Lemon directives.
    SQLite sets `YYNOERRORRECOVERY`, `YYPARSEFREENEVERNULL`, and
    `YYMALLOCARGTYPE`, and conditionally its engine-on-stack macro
@@ -426,5 +469,8 @@ and covered by Milestone D fixtures:
 There are no unexplained byte differences in the executed grammar, automaton,
 table, or complete artifact comparisons. Generated C/header/report/SQL
 compatibility is claimed only for the documented matrix and recorded platform.
-SQLite runtime integration and full compatibility sign-off remain unclaimed.
-Milestone F requires separate authorization.
+Milestone F's pinned-reference acceptance is complete. Cross-platform/locale
+behavior, exhaustive template/filesystem/large-integer boundaries, allocator
+failures, every feature combination, and the full SQLite regression suite remain
+outside the executed verification claim. These are limits, not known Go/C output
+differences; the undefined-C and project-extension exclusions above still apply.

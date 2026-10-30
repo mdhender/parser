@@ -1,4 +1,4 @@
-# Pinned Lemon architecture — Milestone E
+# Pinned Lemon architecture — Milestone F
 
 ## Scope and evidence
 
@@ -7,6 +7,19 @@ front end, parser automaton, numeric tables, and C emitter. Milestone E adds
 template processing, semantic-action rewriting, and C/header/report/SQL output.
 The generated runtime comes from the pinned original C template, not a Go
 parser engine. Embedded C is rewritten textually, not parsed as C.
+
+Milestone F adds validation, not a new parsing algorithm or runtime layer.
+`scripts/test-compatibility.sh` joins the offline tests, independent C baseline,
+intermediate differential snapshots, and complete artifact comparisons. It also
+checks that the cgo-disabled ELF executable has no dynamic interpreter and can
+generate the exact SQLite baseline twice with an unusable PATH and CC.
+Generated-runtime fixtures run both C and Go output, with and without assertions,
+and include recovery/destruction and growable/fixed stacks.
+`scripts/test-sqlite.sh` accepts a local hash-pinned archive, compares configured
+C/Go parser artifacts, then installs only Go's executable/output into a fresh
+SQLite build directory and compiles/runs selected upstream tests. This optional
+source-tree build never changes the vendored reference or runs in ordinary Go
+tests. See [the integration guide](../testdata/sqlite/README.md).
 
 The reference is SQLite **3.50.4**, Fossil revision
 `4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3`.

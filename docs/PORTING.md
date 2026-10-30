@@ -297,3 +297,68 @@ remain unchanged. No other Go port or alternative algorithm was used.
   compatibility audit, broader generated-runtime checks and SQLite source-tree
   compilation/testing where feasible. Milestone E is complete; final project
   compatibility certification remains open.
+
+## Milestone F — Final pinned-reference compatibility
+
+Authorized by the owner's explicit request to implement Milestone F. The final
+acceptance criterion is met **byte for byte**, stronger than the required
+`diff -bw`, with no unexplained output differences. All pinned inputs and
+Milestone A goldens remain unchanged.
+
+- C routines translated / production Go files changed: **none**. The existing
+  translation passed the final campaign without generator changes; the new work
+  is reproducible validation, runtime fixtures, and compatibility documentation.
+- `scripts/test-compatibility.sh` runs offline `go test -count=3 ./...`, vet and
+  a cgo-disabled build with a nonexistent CC; rejects an ELF dynamic interpreter;
+  and executes the exact `./lemon -S parse.y` baseline twice with
+  `PATH=/nonexistent`. Every `.c`, `.h`, `.out`, `.sql`, stdout/stderr and status
+  matches the original goldens and the other run, strictly and under `diff -bw`.
+  It then runs all existing reference/differential scripts. Linux ELF/readelf
+  is an explicit validation prerequisite, not a Go executable dependency.
+- Regression results: **58 grammar, 33 automaton, 48 table, 57 generation cases**
+  pass C-versus-Go comparisons (196 total). Two independent C baseline builds
+  reproduce all unchanged goldens. C-only generation/repetition and a separate
+  `--reference-only` run reproduce all 57 generation expectations.
+- New generation cases use `runtime-recovery.y` and `runtime-stack.y`, extending
+  the existing public-command oracle test without new Go test machinery.
+  C-only generation supplies the five new artifact inventories/hashes.
+  Six runtime configurations compile and execute both C and Go output with
+  assertions and `-DNDEBUG`: arithmetic precedence, fallback/wildcard,
+  recovery/continuation, EOF failure, token/nonterminal destruction, 400 nested
+  pairs on a dynamic stack, and fixed-stack overflow/destruction/parser reuse.
+  Recovery/dynamic cases also exercise `-c`.
+- Investigated runtime expectation difference: pristine C's uncompressed tables
+  defer a reduction until an explicit FOLLOW lookahead, so an invalid token can
+  cause terminal destruction instead of executing a pending action or reducing
+  to a nonterminal. The compressed and `-c` fixtures preserve their separate
+  C-confirmed expected results. C and Go match within every configuration; no
+  template repair, output normalization, or new compatibility exception was used.
+- `scripts/test-sqlite.sh` accepts a local official source archive, verifies its
+  SHA-256/check-in and all six pinned inputs, compares configured C/Go generation,
+  installs Go Lemon/output into a fresh build tree, and runs default SQLite
+  `configure` and `make all testfixture`. It checks the installed executable and
+  artifacts survive the build. Tests never download the archive or modify pinned
+  sources; failures retain complete source/build/test trees and reproduction logs.
+- Executed integration: SQLite 3.50.4 default native build produces libraries,
+  CLI, and upstream Tcl testfixture using the Go-generated parser. The expanded
+  generation command is `./lemon -DSQLITE_ENABLE_MATH_FUNCTIONS
+  -DSQLITE_THREADSAFE=1 -S parse.y`; all artifacts and process results match C,
+  and the artifacts also match the baseline goldens. The 13 unmodified upstream
+  regression files in `testdata/sqlite/upstream-tests.txt` pass **2,534 tests,
+  zero errors** (diagnostics, expressions, queries, CTEs, windows, UPSERT,
+  RETURNING, generated columns, ALTER, triggers, conflicts, transactions).
+- Environment: Go 1.27.3, Linux x86_64, Debian GCC 12.2.0, GNU Make 4.3,
+  Tcl 8.6.13, `LC_ALL=C`, `TZ=UTC`; offline Go settings and `CGO_ENABLED=0`.
+  Missing compiler checks fail explicitly with status 2. The integration script
+  also rejects a wrong archive checksum and retains failure evidence.
+- Intentional deviations: unchanged from E; snapshot extensions, per-invocation
+  ownership, and documented undefined-C exclusions remain. No observed byte
+  differences are permitted or unexplained. The default source-tree and selected
+  upstream regressions supplement artifact acceptance; they are not a full
+  SQLite `releasetest`, sanitizer run, feature matrix, or cross-platform claim.
+- Remaining verification limits: exhaustive PATH/permission and larger integer
+  boundaries, all runtime/feature combinations, and other platforms/locales.
+  See [COMPATIBILITY.md](COMPATIBILITY.md) for the full supported boundary.
+- Next recommended task: none required by the A–F definition of done. Preserve
+  these checks for future changes; broader platforms/features or a reference-pin
+  update require a separately scoped request.

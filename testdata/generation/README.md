@@ -1,4 +1,4 @@
-# Complete C generation fixtures — Milestone E
+# Complete C generation fixtures — Milestones E and F
 
 `cases.tsv` drives both `TestGenerationOracle` and `scripts/test-generation.sh`.
 Fields are name, operation, input relative to this directory (or `sqlite` or
@@ -40,6 +40,24 @@ exercises emission diagnostics and generated files on errors. Existing earlier
 fixtures supply conflicts, nullable states, compounds, malformed grammars,
 no-code chains, empty values/actions, directives, and SQLite variants.
 `runtime.y` compiles and runs in the explicit script: asymmetric arithmetic
-`7 - 2 * 3` must produce value 1, one acceptance, and zero errors. This smoke
-test supplements exact artifact comparison; it is not SQLite runtime testing
-or final Milestone F compatibility certification.
+`7 - 2 * 3` must produce value 1, one acceptance, and zero errors.
+
+Milestone F adds `runtime-recovery.y` (fallback, wildcard, error recovery,
+continuing after an error, EOF failure, and token/nonterminal destruction) and
+`runtime-stack.y` (400 nested pairs on a growable stack, plus a fixed eight-entry
+stack that overflows, destroys seven stacked values, and accepts a subsequent
+parse). Both C- and Go-generated parsers run with assertions enabled and with
+`-DNDEBUG`. Recovery and dynamic-stack fixtures also run with `-c`.
+`fixtures/CASE.expected` contains the independently checked, C-confirmed runtime
+output for each case; runtime failures fail the explicit script. Ordinary Go
+tests check only generated artifact hashes and never compile or execute C.
+
+The compressed and uncompressed recovery cases intentionally have different
+expectations. Without compression, reductions wait for an explicit FOLLOW
+lookahead. BAD after `WILD OTHER SEMI` discards OTHER's value 11 instead of
+executing the pending wildcard statement action; BAD/EOF after ID destroys the
+terminal instead of a reduced `value`. Compression makes those reductions run
+before the error. This is observed in pristine C, not a permitted C/Go difference.
+These runtime checks supplement, and never replace, exact artifact comparisons.
+The separate SQLite integration command is documented in
+[REFERENCE.md](../../docs/REFERENCE.md).

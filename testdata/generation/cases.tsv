@@ -43,6 +43,11 @@ adjacent-template	adjacent	fixtures/actions.y
 executable-template	executable	fixtures/actions.y
 actions-errors	generate	fixtures/actions-errors.y	-s
 runtime	generate	fixtures/runtime.y
+runtime-recovery	generate	fixtures/runtime-recovery.y
+runtime-recovery-no-compress	generate	fixtures/runtime-recovery.y	-c
+runtime-stack	generate	fixtures/runtime-stack.y
+runtime-stack-no-compress	generate	fixtures/runtime-stack.y	-c
+runtime-stack-fixed	generate	fixtures/runtime-stack.y	-DFIXED
 sqlite-baseline	baseline	sqlite	-S
 sqlite-default	generate	sqlite	-s
 sqlite-no-lines	generate	sqlite	-l -S -s

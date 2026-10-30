@@ -1,0 +1,15 @@
+# Unmodified files from the verified SQLite 3.50.4 source archive.
+# Run independently, each in its own scratch working directory.
+parser1.test
+expr.test
+select1.test
+selectA.test
+with1.test
+window1.test
+upsert1.test
+returning1.test
+gencol1.test
+alter.test
+trigger1.test
+conflict.test
+trans.test

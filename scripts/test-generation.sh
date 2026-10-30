@@ -112,16 +112,20 @@ while IFS=$'\t' read -r name operation input options; do
     capture "$work/$name/repeat" "$work/c-lemon" "$source" "$operation" "${args[@]}"
     compare "$work/$name/crun" "$work/$name/repeat"
   fi
-  if [[ "$name" == runtime ]]; then
+  if [[ "$name" == runtime* ]]; then
     runs=(crun repeat)
     if [[ "$mode" == differential ]]; then runs=(crun gorun); fi
     for run in "${runs[@]}"; do
-      "$compiler" -o "$work/$name/$run-parser" "$work/$name/$run/grammar.c"
-      "$work/$name/$run-parser" >"$work/$name/$run-runtime.txt"
-      printf 'value=1 accepted=1 errors=0\n' >"$work/$name/expected-runtime.txt"
-      cmp "$work/$name/expected-runtime.txt" "$work/$name/$run-runtime.txt"
+      for configuration in debug release; do
+        flags=()
+        if [[ "$configuration" == release ]]; then flags=(-DNDEBUG); fi
+        "$compiler" "${flags[@]}" -o "$work/$name/$run-$configuration-parser" "$work/$name/$run/grammar.c"
+        "$work/$name/$run-$configuration-parser" >"$work/$name/$run-$configuration-runtime.txt"
+        diff -u "$root/testdata/generation/fixtures/$name.expected" \
+          "$work/$name/$run-$configuration-runtime.txt"
+      done
     done
-    echo 'PASS: generated C runtime (7 - 2 * 3 = 1, accepted once, no errors)'
+    echo "PASS: $name generated C runtime (debug and NDEBUG)"
   fi
   echo "PASS: $name (byte-for-byte and diff -bw)"
   count=$((count + 1))
