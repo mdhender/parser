@@ -14,11 +14,20 @@ import (
 // The checked-in expectations come only from pinned C Lemon. Ordinary tests
 // neither execute C nor download sources, and exercise the public command API.
 func TestGrammarOracle(t *testing.T) {
+	testOracle(t, "grammar")
+}
+
+func TestAutomatonOracle(t *testing.T) {
+	testOracle(t, "automaton")
+}
+
+func testOracle(t *testing.T, stage string) {
+	t.Helper()
 	root, err := filepath.Abs("../..")
 	if err != nil {
 		t.Fatal(err)
 	}
-	manifest, err := os.ReadFile(filepath.Join(root, "testdata/grammar/cases.tsv"))
+	manifest, err := os.ReadFile(filepath.Join(root, "testdata", stage, "cases.tsv"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,6 +43,8 @@ func TestGrammarOracle(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			args := []string{"./lemon"}
 			switch operation {
+			case "automaton":
+				args = append(args, "--automaton-snapshot")
 			case "snapshot":
 				args = append(args, "--grammar-snapshot")
 			case "reprint":
@@ -49,7 +60,7 @@ func TestGrammarOracle(t *testing.T) {
 			args = append(args, "grammar.y")
 			t.Chdir(t.TempDir())
 			if input != "missing" {
-				path := filepath.Join(root, "testdata/grammar/fixtures", input)
+				path := filepath.Join(root, "testdata", stage, "fixtures", input)
 				if input == "sqlite" {
 					path = filepath.Join(root, "reference/sqlite/src/parse.y")
 				}
@@ -69,7 +80,7 @@ func TestGrammarOracle(t *testing.T) {
 			}{
 				{"stdout.txt", stdout.Bytes()}, {"stderr.txt", stderr.Bytes()}, {"exit-status.txt", []byte(strconv.Itoa(status) + "\n")},
 			} {
-				want, err := os.ReadFile(filepath.Join(root, "testdata/grammar/golden", name, result.name))
+				want, err := os.ReadFile(filepath.Join(root, "testdata", stage, "golden", name, result.name))
 				if err != nil {
 					t.Fatal(err)
 				}

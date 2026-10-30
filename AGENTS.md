@@ -7,17 +7,17 @@ generator. The Go executable must generate C parsers, not Go parsers.
 
 Read `port-prompt.md` before implementation work. It is the detailed specification
 for compatibility, milestones, reference fixtures, and documentation. The current
-implementation authorization covers **Milestones A and B**: establish a
-reproducible C reference baseline and port grammar processing. Stop after
-Milestone B and await authorization before implementing the parser automaton
-(Milestone C). The initial Milestone A limit in `port-prompt.md` was extended
-by the owner's explicit request to implement Milestone B.
+implementation authorization covers **Milestones A through C**: establish a
+reproducible C reference baseline, port grammar processing, and construct the
+parser automaton. Stop after Milestone C and await authorization before table
+generation (Milestone D). The initial Milestone A limit in `port-prompt.md` was
+extended by the owner's explicit requests to implement Milestones B and C.
 
-The repository contains the pinned C baseline, grammar-processing implementation
+The repository contains the pinned C baseline, grammar and automaton implementation
 in `internal/lemon`, the `cmd/lemon` command, offline Go tests, and explicit C
 reference/differential scripts. See `docs/PORTING.md` for the verified boundary.
 The remaining layout proposed in `port-prompt.md` is guidance, not implemented
-automaton or code-generation functionality.
+table-packing or code-generation functionality.
 
 ## Implementation principles
 

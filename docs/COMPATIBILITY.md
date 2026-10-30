@@ -1,12 +1,13 @@
-# Pinned Lemon compatibility — Milestone B
+# Pinned Lemon compatibility — Milestone C
 
 ## Status and pin
 
-**Grammar processing is implemented and reference-verified for the cases
-below. C parser generation is not implemented; no parser-output or runtime
-compatibility is claimed.** Milestone A's reference baseline remains unchanged.
-Milestone B adds the Go executable, offline grammar goldens, and explicit
-C-versus-Go differential checks.
+**Grammar processing and parser automaton construction are implemented and
+reference-verified for the cases below. C parser generation is not implemented;
+no parser-output or runtime compatibility is claimed.** Milestone A's reference
+baseline remains unchanged.
+Milestones B and C add the Go executable, offline grammar/automaton goldens,
+and explicit C-versus-Go differential checks.
 
 Reference: SQLite **3.50.4**, Fossil revision
 `4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3`.
@@ -52,10 +53,37 @@ syntax/exclusion errors, missing input, empty input, and invalid options.
 The 1000/1001 RHS-symbol boundary is also covered through the Go command API.
 
 Repeated offline runs check determinism and isolation between invocations.
-Unimplemented stages are FIRST/nullable sets, configurations/states, lookahead,
-conflicts, tables/compression, alias rewriting, C/template emission, and runtime
-validation. Parsing `%start_symbol`, `error`, hooks, and destructors does not
-implement their automaton/emitter/runtime effects.
+Unimplemented stages are tables/compression, state renumbering, alias rewriting,
+C/template emission, and runtime validation. Parsing hooks and destructors does
+not implement their emitter/runtime effects.
+
+### Milestone C automaton comparisons
+
+`scripts/test-automaton.sh` separately compares C-derived saved goldens and Go
+against C through `FindActions`, before compression or `ResortStates`. It uses
+equivalent isolated input paths and compares full stdout, stderr, status, and
+output inventories, both byte for byte and with `diff -bw`, retaining failures.
+`--reference-only` independently repeats C execution; `--update-goldens` is the
+explicit C-only regeneration command. Ordinary Go tests consume these same
+goldens without executing C.
+
+The [automaton matrix](../testdata/automaton/cases.tsv) covers nullable recursion,
+suffix FIRST through nullable symbols and multiterminals, merged LALR lookaheads
+(including an LR(1)-but-not-LALR(1) grammar), all shift/reduce precedence branches,
+resolved/unresolved reduce/reduce and shift/shift conflicts, ordered compounds,
+fallback/wildcard/error symbols, start selection and diagnostics, undefined
+nonterminals, unreducible rules, action-first rule order, preprocessing and
+malformed input. SQLite is tested under the same six default/feature/line-number
+configurations as the grammar snapshot matrix.
+
+Every normal symbol's nullable/FIRST set, every rule's start/reducibility flag,
+every state's sorted basis/closure and lookaheads, and every action including
+retained conflict/resolution markers are compared without renumbering or
+normalization. Default SQLite matches **323 symbols, 187 terminals, 409 rules,
+845 discovery-order states, zero conflicts**. These are uncompressed automaton
+counts, not the number of states retained by later table optimization.
+Fallback/wildcard metadata and `error` transitions are covered; runtime fallback,
+wildcard dispatch, and error recovery still await generated C and runtime tests.
 
 ## Command-line options
 
@@ -70,6 +98,7 @@ upstream behavior; the following status groups limit the Go claim:
 | `-f`, `-I`, `-O`, `-W` | Ignored flag-form placeholders implemented and differentially verified with empty/nonempty suffixes. |
 | `-b`, `-c`, `-d`, `-m`, `-p`, `-q`, `-r`, `-S`, `-T` | Accepted with no effect in grammar-only modes, just as in C; this is differentially verified. Their generation/report/template behavior is not implemented or claimed. Normal generation fails explicitly. |
 | `--grammar-snapshot` | Project-only extension, not an upstream option. Stops after inferred precedence assignment. |
+| `--automaton-snapshot` | Project-only extension. Stops after conflict resolution, prints the graph even on automaton errors, returns 1 for errors or unresolved conflicts. Ignores generation/report flags, including `-s`; `-E` and `-x` still exit early. Takes priority over `-g` and `--grammar-snapshot`. |
 
 No grammar-stage byte differences are permitted. Unknown-option syntax and
 upstream help formatting are preserved; generation defaults remain future work.
@@ -130,9 +159,10 @@ paths (**L1783–1913**); `PrintAction` (**L3477–3540**); `file_makename`
 
 The complete keyword dispatch in `parseonetoken` is at **L2600–2690**.
 Every declaration below is **implemented and snapshot-verified for parsing and
-stored metadata**, principally by `features-snapshot` and SQLite cases. Effects
-on generated C, conflict resolution, and runtime behavior remain **not
-implemented**, even where the upstream description below mentions them.
+stored metadata**, principally by `features-snapshot` and SQLite cases.
+Precedence, start selection, and token-class automaton effects are additionally
+covered by Milestone C. Effects on generated C and runtime behavior remain
+**not implemented**, even where the upstream description below mentions them.
 Keywords are case-sensitive. Unknown keywords diagnose.
 
 Most single-argument declarations consume one identifier, quoted argument, or
@@ -279,9 +309,22 @@ These are source-derived cautions, **not executed test results**:
 
 ## Intentional deviations and exclusions
 
-- Normal parser-generation requests fail with an explicit Milestone B message
+- Normal parser-generation requests fail with an explicit Milestone C message
   and no artifacts, rather than running an incomplete automaton/emitter.
 - `--grammar-snapshot` is an inspection extension, not a generated parser file.
+- `--automaton-snapshot` is likewise an inspection extension, not `.out` or a
+  generated parser. Stage errors preserve C diagnostic text (including extra
+  newlines for unreducible rules) and the boolean post-automaton exit status.
+- Config builders and graph objects are per invocation rather than process
+  statics/allocation pools. Propagation links are slices; their visitation order
+  differs but the fixed-point sets and discovery/action order match the matrix.
+- C's `actioncmp` final tie uses pointer subtraction. Go uses reverse creation
+  order, matching descending addresses within a C 100-action allocation block.
+  Subtraction between distinct blocks is undefined C behavior; matching the
+  winner of cross-block duplicate-shift ties is excluded from the portable
+  compatibility claim. Ordinary ordered shift/reduce/reduce ties do not depend
+  on this: rule index breaks reduce ties. Small overlapping-compound fixtures
+  verify shift/shift behavior within a block.
 - Go uses per-invocation memory and immutable strings rather than process-static
   allocation pools and interned character pointers. Traversal and identity of
   named symbols remain deterministic; absent and allocated-empty text differ.
@@ -295,7 +338,11 @@ These are source-derived cautions, **not executed test results**:
   those placeholders safely. Exact C crash behavior is excluded. A missing RHS
   close-parenthesis diagnostic with no LHS alias uses `(null)` like this Linux C
   runtime, but that C null-string formatting is not portable.
+- Invalid start grammars can trigger C assertions after the initial diagnostic
+  (for example a left-recursive start introduces a SHIFT/ACCEPT pair not handled
+  by `resolve_conflict`). Go retains the start diagnostic and failure status;
+  reproducing C aborts is excluded. The RHS-start golden uses right recursion.
 
-There are no unexplained byte differences in the executed grammar comparisons.
+There are no unexplained byte differences in the executed grammar or automaton comparisons.
 No generated C/header/report/SQL compatibility or SQLite runtime integration is
-claimed for the Go command. Milestone C requires separate authorization.
+claimed for the Go command. Milestone D requires separate authorization.

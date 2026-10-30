@@ -1,0 +1,2 @@
+grammar.y:6: This rule can not be reduced.
+

@@ -173,6 +173,26 @@ for the uninstrumented `-S parse.y` final-artifact baseline. Their fixtures,
 snapshot schema, and explicit regeneration command are documented in
 [`testdata/grammar/README.md`](../testdata/grammar/README.md).
 
+## Milestone C automaton oracle
+
+`reference/automaton-snapshot.c` separately includes pristine `lemon.c`, repeats
+the same initialization, and runs `FindRulePrecedences`, `FindFirstSets`,
+`FindStates`, `FindLinks`, `FindFollowSets`, and `FindActions`. It stops before
+compression/resorting. It prints original symbol/rule/discovery-state numbers,
+FIRST/nullable sets, basis and closure configurations, final lookaheads, and all
+resolved/conflicting actions. It preserves diagnostics and returns the boolean
+error-or-conflict status after automaton construction.
+
+`scripts/test-automaton.sh` uses the same compiler, environment, literal input
+path, isolated working directories, byte/`diff -bw` comparisons, and failure
+retention policy as the grammar harness. Its manifest records every option;
+ordinary Go tests read C-generated saved expectations offline. The instrumented
+driver accepts `-D`, `-U`, and `-l`; upstream CLI syntax/errors remain covered by
+the grammar harness using pristine C. The [automaton fixture guide](../testdata/automaton/README.md)
+describes the schema and explicit regeneration/repetition commands. These
+intermediate comparisons do not replace final parser artifact acceptance.
+Milestone A's sources, invocation, and artifact hashes below are unchanged.
+
 ## Golden artifact hashes
 
 `testdata/golden/sqlite/SHA256SUMS` records all expected outputs:

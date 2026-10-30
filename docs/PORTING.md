@@ -107,3 +107,60 @@ configuration, and final parser goldens remain unchanged.
   construction, propagation links/lookahead, and conflict resolution; extend
   snapshots to find the earliest intermediate divergence. Do not begin table
   packing or C emission ahead of their milestones.
+
+## Milestone C — Parser automaton
+
+Authorized by the owner's explicit request to implement Milestone C. The pinned
+C source, reference invocation, and Milestone A final parser goldens are
+unchanged. No table packing, compression, state renumbering, or C emission was
+implemented.
+
+- Translated C routines: `SetSize`/`SetNew`/`SetAdd`/`SetUnion`, `FindFirstSets`,
+  `Configlist_add`/`Configlist_addbasis`/`Configlist_closure` and sorted builder
+  extraction, `Configcmp`, structural state lookup, `FindStates`, `getstate`,
+  `same_symbol`, `buildshifts`, `FindLinks`, `FindFollowSets`, `Action_add` and
+  action sorting, `FindActions`, and `resolve_conflict`.
+- Go ownership: `internal/lemon/automaton.go` contains byte sets, nullable/FIRST,
+  configuration builders, state graph, and propagation; `action.go` contains
+  original enum values, action ordering, and pairwise conflict resolution.
+  `grammar.go` owns the new graph/metadata fields. `output.go`, `options.go`,
+  and `lemon.go` expose the project-only `--automaton-snapshot` command.
+- The inspection mode stops after `FindActions`, preserves all conflict and
+  precedence-resolution markers, and serializes original rule IDs and discovery
+  state IDs. It prints the graph even after automaton errors and returns 1 for
+  errors or conflicts. Ordinary generation still fails explicitly with no
+  artifacts. Existing `-E`, `-g`, and grammar snapshot behavior is unchanged.
+- Reference tooling: `reference/automaton-snapshot.c` includes pristine C and
+  mirrors initialization through `FindActions`; `scripts/test-automaton.sh`
+  rebuilds it and Go offline and compares saved C expectations, C output, and Go
+  output in equivalent isolated paths. Both bytes and `diff -bw`, diagnostics,
+  status, and complete output inventories must match. Failed runs are retained.
+- Offline public-command tests reuse the existing oracle runner and checked-in
+  automaton fixtures. Cases distinguish nullable-prefix/suffix FIRST, recursion,
+  LALR basis merging versus canonical LR(1), all precedence/associativity branches,
+  unresolved SR/RR/SS conflicts, ordered multiterminals, reserved `error`,
+  fallback/wildcard metadata, start selection, unreachable/undefined rules,
+  generated versus original rule order, malformed input, and SQLite variants.
+- Executed validation: all **33 automaton cases** match C byte for byte and with
+  `diff -bw`; `--reference-only` independently repeats/reproduces all goldens.
+  Default SQLite matches **323 normal symbols, 187 terminals, 409 rules,
+  845 uncompressed states, zero conflicts**, including every FIRST/nullable set,
+  basis/closure item, configuration lookahead, action, and reducibility flag.
+- Existing validation remains green: all **58 grammar differential cases**;
+  `scripts/test-reference.sh` reproduces all final C artifacts and process
+  results in two independent builds/runs. `GOTOOLCHAIN=local GOPROXY=off
+  CGO_ENABLED=0 CC=/nonexistent/compiler go test -count=3 ./...` and offline
+  `go vet ./...` pass on Go 1.27.3. An explicitly missing compiler makes the
+  automaton differential script fail clearly with status 2, not skip checks.
+  A `CGO_ENABLED=0` executable is statically linked according to `file`.
+- Intentional representation deviations: recursive local builders replace C
+  statics, slices/maps replace allocation pools and hash buckets, ordered slices
+  supply all enumeration, and slice propagation edges reach the same fixed
+  point. Reverse action-creation order replaces the C pointer tie-break; C's
+  cross-allocation pointer subtraction is undefined and not a portable contract.
+  See [COMPATIBILITY.md](COMPATIBILITY.md) for this exclusion and stage boundaries.
+- Unresolved differences in executed comparisons: **none**. No packed-table,
+  report/header/C/SQL output or SQLite runtime compatibility is claimed.
+- Next recommended task, **only after authorization**: Milestone D, translating
+  `CompressTables`, `ResortStates`, `compute_action`, and packed action-table
+  placement/offset construction, with new intermediate reference snapshots.

@@ -1,9 +1,10 @@
 # parser
 
 A faithful Go port of SQLite's Lemon parser generator, currently at
-**Milestone B: grammar processing**. The Go command preprocesses, scans, and
-parses Lemon grammars, including SQLite's full grammar. Automaton construction,
-tables, and C parser generation are not implemented yet; normal generation
+**Milestone C: parser automaton**. The Go command preprocesses, scans, and
+parses Lemon grammars, computes FIRST/nullable sets, constructs LALR states and
+lookaheads, and resolves conflicts, including for SQLite's full grammar. Packed
+tables and C parser generation are not implemented yet; normal generation
 fails explicitly without creating output files. The eventual executable will
 generate C parsers, not Go parsers.
 
@@ -31,6 +32,7 @@ stdout, stderr, exit status, and output-file inventories:
 
 ```sh
 scripts/test-grammar.sh
+scripts/test-automaton.sh
 ```
 
 This explicit differential command requires a C compiler, Go, Bash, coreutils,
@@ -45,14 +47,20 @@ CGO_ENABLED=0 go build -o /tmp/lemon ./cmd/lemon
 /tmp/lemon -E -DSQLITE_OMIT_TRIGGER reference/sqlite/src/parse.y
 /tmp/lemon -g reference/sqlite/src/parse.y
 /tmp/lemon --grammar-snapshot reference/sqlite/src/parse.y
+/tmp/lemon --automaton-snapshot reference/sqlite/src/parse.y
 ```
 
 `-E` prints preprocessed input; `-g` reprints rules without actions in upstream
 order. `--grammar-snapshot` is a project-only inspection option: it emits
 deterministic symbol/rule/declaration metadata after precedence assignment.
 See [snapshot format and fixture commands](testdata/grammar/README.md).
+`--automaton-snapshot` is a separate inspection mode that stops after conflict
+resolution, before compression or state renumbering. It emits discovery-order
+states, configurations, lookaheads, actions, and FIRST/nullable sets. Conflicts
+and automaton errors diagnose and return status 1, while retaining the snapshot.
+See [automaton fixtures and format](testdata/automaton/README.md).
 
 See [reference provenance and reproduction](docs/REFERENCE.md),
 [architecture](docs/ARCHITECTURE.md), [porting log](docs/PORTING.md), and
-[compatibility scope](docs/COMPATIBILITY.md). Work stops at Milestone B pending
-authorization for Milestone C.
+[compatibility scope](docs/COMPATIBILITY.md). Work stops at Milestone C pending
+authorization for Milestone D.

@@ -38,6 +38,7 @@ type options struct {
 	flags          map[byte]bool
 	defines, files []string
 	snapshot       bool
+	automaton      bool
 }
 
 func parseOptions(args []string, stderr io.Writer) (options, bool) {
@@ -46,6 +47,10 @@ func parseOptions(args []string, stderr io.Writer) (options, bool) {
 	for i, a := range args[1:] {
 		if a == "--grammar-snapshot" {
 			o.snapshot = true
+			continue
+		}
+		if a == "--automaton-snapshot" {
+			o.automaton = true
 			continue
 		}
 		flag := len(a) > 0 && (a[0] == '-' || a[0] == '+')

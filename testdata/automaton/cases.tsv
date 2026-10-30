@@ -1,0 +1,34 @@
+# name<TAB>operation<TAB>input (fixtures basename, sqlite, missing)<TAB>options
+minimal	automaton	minimal.y
+no-tokens	automaton	no-tokens.y
+nullable-cycle	automaton	nullable-cycle.y
+suffix-first	automaton	suffix-first.y
+lalr-merge	automaton	lalr-merge.y
+precedence	automaton	precedence.y
+sr-no-precedence	automaton	sr-no-precedence.y
+sr-null-rule	automaton	sr-null-rule.y
+sr-unranked-shift	automaton	sr-unranked-shift.y
+sr-unranked-override	automaton	sr-unranked-override.y
+rr-unresolved	automaton	rr-unresolved.y
+rr-equal	automaton	rr-equal.y
+rr-high-first	automaton	rr-high-first.y
+rr-high-second	automaton	rr-high-second.y
+ss-overlap	automaton	ss-overlap.y
+ss-ordered	automaton	ss-ordered.y
+fallback-wildcard-error	automaton	fallback-wildcard-error.y
+explicit-start	automaton	explicit-start.y
+missing-start	automaton	missing-start.y
+rhs-start	automaton	rhs-start.y
+undefined-nonterminal	automaton	undefined-nonterminal.y
+rule-order	automaton	rule-order.y
+conditional-default	automaton	conditional.y
+conditional-defines	automaton	conditional.y	-DFEATURE -DUNUSED=1
+conditional-undefine	automaton	conditional.y	-DFEATURE -UFEATURE -l
+malformed	automaton	malformed.y
+empty	automaton	empty.y
+missing	automaton	missing
+sqlite-default	automaton	sqlite
+sqlite-no-lines	automaton	sqlite	-l
+sqlite-features	automaton	sqlite	-DSQLITE_ENABLE_UPDATE_DELETE_LIMIT -DSQLITE_ENABLE_ORDERED_SET_AGGREGATES -DSQLITE_ENABLE_MATH_FUNCTIONS
+sqlite-omit	automaton	sqlite	-DSQLITE_OMIT_TRIGGER -DSQLITE_OMIT_WINDOWFUNC -DSQLITE_OMIT_VIRTUALTABLE -DSQLITE_OMIT_CTE
+sqlite-undefine	automaton	sqlite	-DSQLITE_OMIT_TRIGGER -DSQLITE_OMIT_WINDOWFUNC -USQLITE_OMIT_TRIGGER

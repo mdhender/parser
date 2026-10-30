@@ -1,0 +1,3 @@
+grammar.y:7: This rule can not be reduced.
+
+2 parsing conflicts.

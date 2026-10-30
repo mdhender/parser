@@ -1,0 +1,9 @@
+automaton	2	1	1	1	0
+first	0	0	
+first	1	1	
+reduce	0	1	1
+state	0
+basis	0	0
+config	0	0	0
+action	0	2	0
+action	1	1	-

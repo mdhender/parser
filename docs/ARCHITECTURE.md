@@ -1,12 +1,13 @@
-# Pinned Lemon architecture — Milestone B
+# Pinned Lemon architecture — Milestone C
 
 ## Scope and evidence
 
 This document describes the complete C pipeline and the implemented Go grammar
-front end. Milestone B implements preprocessing, scanning, declarations, rules,
-symbols, rule numbering, precedence assignment, and grammar reprinting.
-Automaton construction, tables, C emission, and a parser runtime are not Go
-features yet. C code embedded in grammars remains opaque text.
+front end and parser automaton. Milestone C extends Milestone B with nullable
+and FIRST sets, configuration closure, discovery-order states, LALR lookahead
+propagation, and conflict resolution. Table compression/packing, state
+renumbering, C emission, and a parser runtime are not Go features yet.
+C code embedded in grammars remains opaque text.
 
 The reference is SQLite **3.50.4**, Fossil revision
 `4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3`.
@@ -34,6 +35,8 @@ exits with its status. Everything else lives in `internal/lemon`:
 | `parser.go` | `pstate`, `parseonetoken`; same parser states, recovery boundaries, and declaration slots. |
 | `grammar.go` | Grammar, symbol, and rule ownership; `Symbol_new`/lookup, `Symbolcmpp`, action-first numbering/`Rule_sort`, `FindRulePrecedences`. |
 | `output.go` | `Reprint`/`rule_print` and project-only deterministic snapshot serialization. |
+| `automaton.go` | Byte sets, `FindFirstSets`, configuration builder/closure, `FindStates`/`getstate`/`buildshifts`, `same_symbol`, `FindLinks`, `FindFollowSets`. |
+| `action.go` | `Action_add`/`Action_sort`, `FindActions`, `resolve_conflict`, original action enum values and retained loser actions. |
 
 All mutable tables, define usage, parser state, and diagnostics belong to one
 invocation; unlike C's process statics, repeated Go calls do not share state.
@@ -58,6 +61,20 @@ The C instrumentation driver includes pristine `lemon.c` and repeats only its
 grammar-stage initialization/indexing, stopping at the same snapshot boundary.
 It never substitutes for the uninstrumented final-artifact oracle. Snapshot
 schema and commands are in [the fixture guide](../testdata/grammar/README.md).
+
+`--automaton-snapshot` runs through `FindActions` but never calls
+`CompressTables` or `ResortStates`. Its separate C driver includes the same
+pristine source and stops at that boundary. The [automaton fixture guide](../testdata/automaton/README.md)
+defines the representation. Go config builders are local to each recursive
+`getstate` call instead of shared process statics. Structural basis keys encode
+ordered `(original rule index, dot)` pairs; maps only look up identities.
+Propagation links use slices rather than pool-allocated singly linked lists;
+link visitation order does not affect the fixed-point sets or state discovery.
+Actions sort before resolution, not afterwards: mutated types can intentionally
+appear out of enum order. Equal-symbol/type shift ties use reverse creation
+order rather than Go heap addresses. C's final pointer tie-break is only
+portable within an allocation block; cross-block ties are not a portable C
+contract (see compatibility exclusions).
 
 ## 1. Main execution flow
 

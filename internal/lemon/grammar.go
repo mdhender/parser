@@ -1,6 +1,6 @@
-// Package lemon implements the grammar-processing stages of SQLite's Lemon.
-// The authoritative source is reference/sqlite/tool/lemon.c; automaton and C
-// output construction are deliberately not implemented in Milestone B.
+// Package lemon implements grammar processing and automaton construction for
+// SQLite's Lemon. The authoritative source is reference/sqlite/tool/lemon.c;
+// table packing and C output construction are not implemented yet.
 package lemon
 
 import (
@@ -40,6 +40,8 @@ type Symbol struct {
 	Datatype   *string
 	Content    bool
 	Subsymbols []*Symbol
+	Nullable   bool
+	First      symbolSet
 }
 
 type Rule struct {
@@ -56,6 +58,8 @@ type Rule struct {
 	NoCode      bool
 	NeverReduce bool
 	NextLHS     *Rule
+	LHSStart    bool
+	CanReduce   bool
 }
 
 // Grammar owns all mutable state for one invocation. Maps are used only for
@@ -65,6 +69,8 @@ type Grammar struct {
 	Symbols                                                            []*Symbol
 	Rules                                                              []*Rule
 	StartRule                                                          *Rule
+	States                                                             []*State
+	NConflict                                                          int
 	ErrorSymbol, Wildcard                                              *Symbol
 	NSymbol, NTerminal, NRuleWithAction                                int
 	HasFallback                                                        bool

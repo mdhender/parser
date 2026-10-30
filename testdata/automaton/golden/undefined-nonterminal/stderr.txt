@@ -1,0 +1,1 @@
+grammar.y:0: Nonterminal "absent" has no rules.

@@ -106,6 +106,46 @@ func (g *Grammar) Snapshot(w io.Writer) {
 	}
 }
 
+// AutomatonSnapshot stops before compression and state renumbering. Original
+// rule IDs and discovery state IDs expose differences rather than masking them.
+func (g *Grammar) AutomatonSnapshot(w io.Writer) {
+	setText := func(s symbolSet) string {
+		var indices []string
+		for i, b := range s {
+			if b != 0 {
+				indices = append(indices, strconv.Itoa(i))
+			}
+		}
+		return strings.Join(indices, ",")
+	}
+	fmt.Fprintf(w, "automaton\t%d\t%d\t%d\t%d\t%d\n", g.NSymbol, g.NTerminal, len(g.Rules), len(g.States), g.NConflict)
+	for _, s := range g.Symbols[:g.NSymbol] {
+		fmt.Fprintf(w, "first\t%d\t%d\t%s\n", s.Index, boolInt(s.Nullable), setText(s.First))
+	}
+	for _, r := range g.Rules {
+		fmt.Fprintf(w, "reduce\t%d\t%d\t%d\n", r.Index, boolInt(r.LHSStart), boolInt(r.CanReduce))
+	}
+	for _, s := range g.States {
+		fmt.Fprintf(w, "state\t%d\n", s.Number)
+		for _, c := range s.Basis {
+			fmt.Fprintf(w, "basis\t%d\t%d\n", c.Rule.Index, c.Dot)
+		}
+		for _, c := range s.Configs {
+			fmt.Fprintf(w, "config\t%d\t%d\t%s\n", c.Rule.Index, c.Dot, setText(c.Follow))
+		}
+		for _, a := range s.Actions {
+			target := "-"
+			switch a.Type {
+			case Shift, SSConflict, SHResolved:
+				target = strconv.Itoa(a.State.Number)
+			case Reduce, SRConflict, RRConflict, RDResolved:
+				target = strconv.Itoa(a.Rule.Index)
+			}
+			fmt.Fprintf(w, "action\t%d\t%d\t%s\n", a.Symbol.Index, a.Type, target)
+		}
+	}
+}
+
 func boolInt(b bool) int {
 	if b {
 		return 1

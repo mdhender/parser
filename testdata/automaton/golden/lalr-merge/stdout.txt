@@ -1,0 +1,89 @@
+automaton	9	6	6	12	2
+first	0	0	
+first	1	0	
+first	2	0	
+first	3	0	
+first	4	0	
+first	5	0	
+first	6	0	1,3
+first	7	0	5
+first	8	0	5
+reduce	0	1	1
+reduce	1	1	1
+reduce	2	1	1
+reduce	3	1	1
+reduce	4	0	1
+reduce	5	0	0
+state	0
+basis	0	0
+basis	1	0
+basis	2	0
+basis	3	0
+config	0	0	0
+config	1	0	0
+config	2	0	0
+config	3	0	0
+action	1	0	1
+action	3	0	7
+action	6	1	-
+state	1
+basis	0	1
+basis	2	1
+config	0	1	0
+config	2	1	0
+config	4	0	2
+config	5	0	4
+action	5	0	6
+action	7	0	2
+action	8	0	4
+state	2
+basis	0	2
+config	0	2	0
+action	2	0	3
+state	3
+basis	0	3
+config	0	3	0
+action	0	2	0
+state	4
+basis	2	2
+config	2	2	0
+action	4	0	5
+state	5
+basis	2	3
+config	2	3	0
+action	0	2	2
+state	6
+basis	4	1
+basis	5	1
+config	4	1	2,4
+config	5	1	2,4
+action	2	2	4
+action	2	6	5
+action	4	2	4
+action	4	6	5
+state	7
+basis	1	1
+basis	3	1
+config	1	1	0
+config	3	1	0
+config	4	0	4
+config	5	0	2
+action	5	0	6
+action	7	0	8
+action	8	0	10
+state	8
+basis	1	2
+config	1	2	0
+action	4	0	9
+state	9
+basis	1	3
+config	1	3	0
+action	0	2	1
+state	10
+basis	3	2
+config	3	2	0
+action	2	0	11
+state	11
+basis	3	3
+config	3	3	0
+action	0	2	3

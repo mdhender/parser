@@ -63,13 +63,29 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	g.prepare()
+	if o.automaton {
+		g.FindRulePrecedences()
+		g.FindFirstSets()
+		g.FindStates()
+		g.FindLinks()
+		g.FindFollowSets()
+		g.FindActions()
+		g.AutomatonSnapshot(stdout)
+		if g.NConflict > 0 {
+			fmt.Fprintf(stderr, "%d parsing conflicts.\n", g.NConflict)
+		}
+		if g.errors > 0 || g.NConflict > 0 {
+			return 1
+		}
+		return 0
+	}
 	if o.snapshot {
 		g.FindRulePrecedences()
 		g.Snapshot(stdout)
 	} else if o.flags['g'] {
 		g.reprint(stdout)
 	} else {
-		fmt.Fprintln(stderr, "C parser generation is not implemented (Milestone B supports -E, -g, and --grammar-snapshot only).")
+		fmt.Fprintln(stderr, "C parser generation is not implemented (Milestone C supports -E, -g, --grammar-snapshot, and --automaton-snapshot only).")
 		return 1
 	}
 	if o.flags['s'] {

@@ -1,0 +1,9 @@
+start ::= head optional tail END .
+start ::= head optional FINAL .
+start ::= head optional .
+head ::= ITEM .
+optional ::= .
+optional ::= OPT .
+tail ::= .
+tail ::= LAST .
+tail ::= ONE|TWO .
