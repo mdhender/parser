@@ -47,7 +47,9 @@ Compile the original Lemon implementation using the available C compiler.
 
 Determine the exact invocation SQLite uses to generate its parser, including relevant options, preprocessor definitions, template selection, and working directory.
 
-Preserve the invocation in a reproducible script.
+Select a specific SQLite build configuration at the pinned revision. Preserve the relevant build-rule excerpt from that revision and record the resolved feature flags, compiler command and version, platform, and environment settings that affect generation in docs/REFERENCE.md.
+
+Preserve the reference build and parser-generation invocations in reproducible scripts.
 
 Generate the baseline artifacts:
 
@@ -55,7 +57,7 @@ Generate the baseline artifacts:
 * parse.h
 * parse.out, if enabled by the selected invocation
 
-Store the baseline artifacts as golden fixtures, or provide a deterministic script that regenerates them from the pinned reference sources.
+Store the baseline artifacts as golden fixtures and provide a deterministic script that regenerates them from the pinned reference sources.
 
 Ensure both implementations receive equivalent input paths so that embedded filenames and #line directives do not cause artificial differences.
 
@@ -166,12 +168,15 @@ The harness must:
 * Use isolated temporary output directories.
 * Pass equivalent options to both implementations.
 * Capture stdout, stderr, and exit status.
+* Compare stdout, stderr, and exit status, including for malformed grammars and invalid command-line options. Document any permitted diagnostic differences in docs/COMPATIBILITY.md.
 * Compare generated artifacts.
 * Report the first meaningful difference.
 * Retain full output artifacts when a comparison fails.
 * Make failures reproducible.
 
 Support both strict byte-for-byte comparison and whitespace-insensitive comparison equivalent to diff -bw.
+
+Run both comparisons for every generated artifact. Review and document every byte-level difference, even when diff -bw passes. Whitespace-insensitive equality alone does not establish semantic equivalence: it can conceal changes inside C string literals and preprocessor definitions. Only documented formatting differences that preserve behavior are permitted.
 
 Do not normalize, reorder, or otherwise transform generated output to conceal differences.
 
@@ -195,6 +200,8 @@ Possible snapshots include:
 * Compressed table offsets and entries
 
 The instrumentation must not change the behavior of the reference implementation.
+
+Keep the pinned reference sources pristine. Apply instrumentation only to separate copies, and use an uninstrumented reference build for final artifact comparisons.
 
 Compare corresponding Go snapshots against the C snapshots.
 
@@ -248,13 +255,15 @@ Investigate every discrepancy. Do not mark the milestone complete merely because
 
 In addition to output comparisons:
 
-* Run go test ./....
-* Run go vet ./....
+* Run `go test ./...`.
+* Run `go vet ./...`.
 * Run tests repeatedly to detect nondeterministic output.
 * Test several smaller Lemon grammars before SQLite’s full grammar.
 * Exercise precedence, fallback tokens, wildcard tokens, error recovery, and relevant grammar directives.
 * Verify error handling for malformed input.
 * Confirm the Go executable can run without a C compiler or C runtime dependency beyond normal operating-system facilities.
+
+Ordinary go test ./... must run offline without a C compiler, using Go tests and checked-in golden fixtures. Provide and document a separate explicit command for reference reproducibility and C-versus-Go differential tests. That command must fail clearly when a C compiler or another required tool is missing, rather than silently skipping required checks. Test runs must not download reference sources or dependencies.
 
 As an additional validation, compile the Go-generated SQLite parser in the corresponding SQLite source tree and run relevant SQLite tests if the build environment permits.
 
@@ -276,6 +285,8 @@ For each milestone, record:
 
 Maintain docs/COMPATIBILITY.md describing the supported SQLite revision, command-line behavior, tested grammars, and any remaining incompatibilities.
 
+Inventory the command-line options and grammar directives supported by the pinned C implementation. For each, identify whether it is supported, verified by differential tests, or explicitly excluded from the compatibility claim. Cover supported behavior with differential tests; matching SQLite's parse.y alone is not evidence of general-purpose Lemon compatibility.
+
 Document which functionality has been implemented but not yet verified against the reference.
 
 Do not claim full compatibility based only on unit tests or a successful build.
@@ -293,11 +304,11 @@ The project is complete when:
 7. The reference revision and reproduction instructions are documented.
 8. No C code is required to execute the finished Go implementation.
 
-Byte-for-byte identical output is desirable but not required if the whitespace-insensitive acceptance test passes.
+Byte-for-byte identical output is desirable but not required if the whitespace-insensitive acceptance test passes and every byte-level difference has been reviewed and documented as a behavior-preserving formatting difference.
 
 9. Working Instructions for the Coding Agent
 
-Work autonomously through the milestones, but make small, reviewable commits.
+Work autonomously within the authorized milestones, but make small, reviewable commits. The initial authorization covers Milestone A only; the stopping instruction in Section 10 takes precedence over the broader milestone plan.
 
 Use commit messages identifying the translated subsystem or compatibility milestone.
 
@@ -327,6 +338,6 @@ Begin with Milestone A only.
 8. Implement the reference build and comparison scripts.
 9. Commit the baseline.
 
-Do not begin translating Lemon until the reference baseline is reproducible.
+Stop after Milestone A and await authorization for Milestone B. A reproducible reference baseline is necessary but does not by itself authorize translation.
 
 At the end of Milestone A, report the source revision, exact command used, generated artifact hashes, baseline test results, and proposed next translation step.
