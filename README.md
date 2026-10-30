@@ -1,7 +1,8 @@
 # parser
 
-A faithful Go port of SQLite's Lemon parser generator, currently at
-**Milestone F: final pinned-reference compatibility**. The Go command
+A faithful Go port of SQLite's Lemon parser generator. **v1.0.0** completes
+Milestones A–F: final pinned-reference compatibility. See the
+[release notes](CHANGELOG.md). The Go command
 preprocesses, scans, and parses Lemon grammars, computes FIRST/nullable sets,
 constructs LALR states and lookaheads, resolves conflicts, compresses and renumbers
 states, and packs action tables, including for SQLite's full grammar. It uses the
