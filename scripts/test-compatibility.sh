@@ -31,7 +31,7 @@ trap 'cleanup "$@"' EXIT
 ) 2>&1 | tee "$work/go.log"
 
 # No ELF interpreter: the Go command does not load a C runtime. Also execute
-# normal generation with no compiler or utilities available through PATH.
+# normal generation with no external template, compiler, or utilities on PATH.
 readelf -l "$work/lemon" >"$work/program-headers.txt"
 if grep -q INTERP "$work/program-headers.txt"; then
   echo 'Go Lemon unexpectedly requires a dynamic interpreter' >&2; exit 1
@@ -39,7 +39,6 @@ fi
 for run in first second; do
   mkdir "$work/$run"
   cp "$work/lemon" "$work/$run/lemon"
-  cp "$root/reference/sqlite/tool/lempar.c" "$work/$run/lempar.c"
   cp "$root/reference/sqlite/src/parse.y" "$work/$run/parse.y"
   status=0
   (cd "$work/$run" && PATH=/nonexistent CC=/nonexistent/compiler ./lemon -S parse.y) \
@@ -49,7 +48,7 @@ for run in first second; do
     2>&1 | tee "$work/$run-comparison.log"
 done
 "$root/scripts/compare-artifacts.sh" "$work/first" "$work/second"
-echo 'PASS: standalone Go generation twice, exact SQLite goldens, no dynamic interpreter'
+echo 'PASS: embedded-template Go generation twice, exact SQLite goldens, no dynamic interpreter'
 
 for stage in reference grammar automaton tables generation; do
   "$root/scripts/test-$stage.sh" 2>&1 | tee "$work/$stage.log"

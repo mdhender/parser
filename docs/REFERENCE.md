@@ -35,6 +35,11 @@ The manifest also pins `main.mk`, `manifest.uuid`, and `VERSION`.
 Updating the reference requires an explicit reviewed change to the sources,
 manifests, documentation, and golden artifacts. Tests never update them.
 
+The Go executable embeds this exact `tool/lempar.c` via `reference/template.go`
+as its final template-search fallback (issue #1). The embedded hash is checked
+offline against the value above. This does not modify the pinned source, C
+reference invocation, or golden baseline; external template overrides still win.
+
 ## Build recipe and selected configuration
 
 The relevant unmodified excerpts from `reference/sqlite/main.mk` are

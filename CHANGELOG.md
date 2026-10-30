@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Embed the pristine pinned SQLite 3.50.4 parser template as the final fallback
+  when no external template is found (issue #1). Preserve external lookup order
+  and explicit `-T` errors. No template installation is required for default
+  generation; pinned sources and SQLite golden outputs are unchanged.
+
 ## v1.0.0 — 2026-10-30
 
 Initial stable release of the standalone Go port of SQLite's Lemon parser

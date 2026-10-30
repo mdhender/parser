@@ -3,11 +3,21 @@ package reference_test
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mdhender/parser/reference"
 )
+
+func TestEmbeddedTemplateHash(t *testing.T) {
+	const want = "dc0a1e45bdf5d5413467ff157135d388f552fa90624d9c0b76bee1c55cec427a"
+	if got := fmt.Sprintf("%x", sha256.Sum256([]byte(reference.ParserTemplate))); got != want {
+		t.Fatalf("embedded template SHA-256 = %s, want %s", got, want)
+	}
+}
 
 // These checks run offline, without compiling or executing the C oracle.
 // Changes to pinned inputs or reviewed golden outputs require an explicit

@@ -1,4 +1,4 @@
-// Cooyright (c) 2026 Michael D Henderson 
+// Cooyright (c) 2026 Michael D Henderson
 
 package parser
 

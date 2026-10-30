@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/mdhender/parser/reference"
 )
 
 func (g *Grammar) fileName(suffix string, o options) string {
@@ -69,6 +71,11 @@ func (g *Grammar) openTemplate(argv0 string, o options) []byte {
 							break
 						}
 					}
+				}
+				// Preserve all external lookup choices and their read errors.
+				// Only an absent final candidate uses the standalone default.
+				if _, err := os.Stat(name); os.IsNotExist(err) {
+					return []byte(reference.ParserTemplate)
 				}
 			}
 		}

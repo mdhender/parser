@@ -161,6 +161,27 @@ Full PATH-only template search and permission-denied distinctions remain
 implemented but not differentially verified. Integer-width boundary choices
 above the exercised ranges are directly translated but not reference-verified.
 
+### Embedded default template (issue #1)
+
+The Go binary embeds the unchanged pinned SQLite 3.50.4 `lempar.c`. External
+selection keeps its existing precedence: explicit `-T`, grammar-adjacent `.lt`,
+current-directory `lempar.c`, then executable-directory lookup (when argv[0]
+contains `/`) or PATH search (otherwise). Only an absent final search candidate
+uses the embedded template. Explicit `-T` failures and errors reading selected
+external files remain errors; the fallback does not repair invalid templates.
+Unlike C Lemon, Go can therefore generate without any installed template. This
+is an intentional standalone-executable extension, not an external precedence
+change. A hash test pins the embedded bytes to the reference SHA-256.
+
+Offline tests exercise competing, distinct overrides at every lookup level,
+including first-match PATH order and failing explicit overrides. Without external
+templates, both argv[0] lookup forms produce all four SQLite baseline artifacts
+and process results byte for byte. The standalone portion of
+`scripts/test-compatibility.sh` now uses the embedded fallback for both repeated
+binary runs; C reference and differential fixtures still use the pinned disk
+template. PATH override precedence is covered by Go tests, not a new C
+differential case; permission-denied distinctions remain outside that coverage.
+
 ### Milestone F final acceptance and runtime checks
 
 `scripts/test-compatibility.sh` runs offline `go test -count=3 ./...`,
@@ -403,7 +424,8 @@ and covered by Milestone D fixtures:
    grammar-adjacent `.lt`, current-directory `lempar.c`, and executable/PATH
    lookup (`tplt_open`, **L3763–3816**). Record invocation directory, paths,
    explicit `-T`, define list/order, output filenames, compiler, and assertions.
-   `-x` alone cannot verify the reference revision.
+   Go's final embedded fallback pins the default bytes but does not override
+   external files. `-x` alone cannot verify the reference revision.
 2. `-r` bypasses initialization work as well as sorting: `nxstate`, action
    counts, offsets, and default rule numbers are established only by
    `ResortStates` (**L1876–1879**, **L5293–5330**). Small and SQLite table

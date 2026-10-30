@@ -136,6 +136,108 @@ func TestRHSLimit(t *testing.T) {
 	}
 }
 
+func TestEmbeddedTemplateSQLite(t *testing.T) {
+	root, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	grammar, err := os.ReadFile(filepath.Join(root, "reference/sqlite/src/parse.y"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, argv0 := range []string{"./lemon", "lemon"} {
+		t.Run(argv0, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			t.Setenv("PATH", "/nonexistent")
+			if err := os.WriteFile("parse.y", grammar, 0600); err != nil {
+				t.Fatal(err)
+			}
+			var out, errout bytes.Buffer
+			status := lemon.Run([]string{argv0, "-S", "parse.y"}, &out, &errout)
+			results := map[string][]byte{
+				"stdout.txt": out.Bytes(), "stderr.txt": errout.Bytes(),
+				"exit-status.txt": []byte(strconv.Itoa(status) + "\n"),
+			}
+			for _, name := range []string{"parse.c", "parse.h", "parse.out", "parse.sql"} {
+				results[name], err = os.ReadFile(name)
+				if err != nil {
+					t.Fatalf("%s: %v (status=%d stderr=%s)", name, err, status, &errout)
+				}
+			}
+			for name, got := range results {
+				want, err := os.ReadFile(filepath.Join(root, "testdata/golden/sqlite", name))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !bytes.Equal(got, want) {
+					t.Errorf("%s differs from pinned C baseline", name)
+				}
+			}
+		})
+	}
+}
+
+func TestTemplatePrecedence(t *testing.T) {
+	root, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	template, err := os.ReadFile(filepath.Join(root, "reference/sqlite/tool/lempar.c"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name, argv0, selected string
+		files                 []string
+		options               []string
+	}{
+		{"explicit", "bin/lemon", "custom.c", []string{"custom.c", "grammar.lt", "lempar.c", "bin/lempar.c", "path/lempar.c"}, []string{"-Tcustom.c"}},
+		{"adjacent", "bin/lemon", "grammar.lt", []string{"grammar.lt", "lempar.c", "bin/lempar.c", "path/lempar.c"}, nil},
+		{"current", "bin/lemon", "lempar.c", []string{"lempar.c", "bin/lempar.c", "path/lempar.c"}, nil},
+		{"executable", "bin/lemon", "bin/lempar.c", []string{"bin/lempar.c", "path/lempar.c"}, nil},
+		{"path", "lemon", "path/lempar.c", []string{"path/lempar.c", "later/lempar.c"}, nil},
+		{"missing-explicit", "bin/lemon", "", []string{"lempar.c"}, []string{"-Tmissing"}},
+		{"missing-explicit-no-external", "bin/lemon", "", nil, []string{"-Tmissing"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			t.Setenv("PATH", "path:later")
+			if err := os.WriteFile("grammar.y", []byte("start ::= TOKEN.\n"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			for _, name := range tc.files {
+				if err := os.MkdirAll(filepath.Dir(name), 0700); err != nil {
+					t.Fatal(err)
+				}
+				marked := string(template) + "\n/* selected template: " + name + " */\n"
+				if err := os.WriteFile(name, []byte(marked), 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			args := append([]string{tc.argv0}, tc.options...)
+			args = append(args, "grammar.y")
+			var out, errout bytes.Buffer
+			status := lemon.Run(args, &out, &errout)
+			if tc.selected == "" {
+				if status != 1 || errout.String() != "Can't find the parser driver template file \"missing\".\n" {
+					t.Fatalf("status=%d stderr=%s", status, &errout)
+				}
+				return
+			}
+			if status != 0 || errout.Len() != 0 {
+				t.Fatalf("status=%d stderr=%s", status, &errout)
+			}
+			generated, err := os.ReadFile("grammar.c")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(generated), "/* selected template: "+tc.selected+" */") {
+				t.Fatalf("generated C did not use %s", tc.selected)
+			}
+		})
+	}
+}
+
 func TestGenerationOracle(t *testing.T) {
 	root, err := filepath.Abs("../..")
 	if err != nil {

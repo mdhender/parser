@@ -359,6 +359,10 @@ input pathname, **not necessarily the working directory**, despite option help
 `tplt_open` checks explicit `-T`, then grammar-adjacent `.lt`, current-directory
 `lempar.c`, then executable-directory/PATH lookup (`L3640–3684`,
 `L3763–3816`). Pin template selection and invocation location for comparisons.
+Go adds a final embedded fallback only when the external search finds no file.
+`reference/template.go` embeds the pristine pinned `sqlite/tool/lempar.c` directly,
+without a duplicate generated copy. `openTemplate` converts it to bytes for the
+existing emission path; explicit `-T` and selected-file read failures still error.
 
 `tplt_xfer` copies fixed-size line chunks until a column-one `%%` marker and
 rewrites eligible `Parse` prefixes to `%name`; the separator sequence is a

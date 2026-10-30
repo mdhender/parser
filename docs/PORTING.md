@@ -362,3 +362,37 @@ Milestone A goldens remain unchanged.
 - Next recommended task: none required by the A–F definition of done. Preserve
   these checks for future changes; broader platforms/features or a reference-pin
   update require a separately scoped request.
+
+## Issue #1 — Embedded standalone template
+
+- `reference/template.go` embeds the pristine pinned SQLite 3.50.4 `lempar.c`
+  directly, avoiding a duplicate copy. No pinned source or golden file changed.
+- `internal/lemon/template.go` retains the translated `tplt_open`/`pathsearch`
+  selection order and adds the embedded bytes only when the final external
+  candidate does not exist. Explicit `-T` failures and selected-file read errors
+  remain errors. The final fallback is an intentional extension over C Lemon;
+  external precedence and the emission algorithm are unchanged.
+- `reference/reference_test.go` checks the embedded SHA-256 against the pin.
+  Public-command tests in `internal/lemon/lemon_test.go` generate the exact
+  SQLite baseline with no external template for both argv[0] search forms and
+  test distinct competing explicit/adjacent/current/executable/PATH overrides,
+  first-match PATH order, and missing explicit templates with/without defaults.
+- `scripts/test-compatibility.sh` now omits the disk template from its two
+  standalone runs. C reference and differential invocations are unchanged.
+- Validation: `scripts/test-compatibility.sh` passes, including offline
+  `go test -count=3 ./...`, repository-wide `go vet`, C reference reproduction and all
+  **58 grammar, 33 automaton, 48 table, 57 generation differential cases**,
+  including generated-C runtime checks. A cgo-disabled binary built with an
+  unusable CC generates twice with `PATH=/nonexistent` and no template on disk;
+  every artifact/process result matches the SQLite goldens and the other run,
+  strictly and under `diff -bw`. `readelf` finds no dynamic interpreter.
+- At the owner's request, `go mod tidy` records the existing root `version.go`
+  dependency on `github.com/maloquacious/semver v0.4.1` in `go.mod`/`go.sum`;
+  `version.go` is gofmt-formatted and included. This resolves the initially
+  blocked full-suite checks. The root version API now explicitly depends on
+  semver; the generator executable still uses only standard-library packages.
+  A fresh module cache needs `go mod download` before offline full-suite checks.
+- Remaining limits: permission-denied distinctions and exhaustive filesystem
+  behavior remain outside the verified boundary. PATH precedence now has Go
+  coverage, not a new C differential case. Preserve the full compatibility checks
+  for future changes.

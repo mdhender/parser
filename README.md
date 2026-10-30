@@ -17,7 +17,10 @@ are committed; tests do not download anything or update fixtures.
 
 ## Validate
 
-Offline grammar and fixture-integrity tests (Go version from `go.mod`; no C compiler):
+For a fresh module cache, run `go mod download` first to fetch the root version
+API's semver dependency. The generator executable itself uses only the standard
+library. Then run offline grammar and fixture-integrity tests (Go version from
+`go.mod`; no C compiler):
 
 ```sh
 GOTOOLCHAIN=local GOPROXY=off CGO_ENABLED=0 go test ./...
@@ -102,8 +105,11 @@ Normal generation writes `.c`, `.h`, and `.out` alongside the input unless `-d`
 sets an existing output directory. `-S` adds SQL metadata; `-q` suppresses the
 report; `-m` emits makeheaders-style C and omits the header. Template lookup
 checks explicit `-T`, an adjacent `.lt`, current-directory `lempar.c`, then the
-executable directory/PATH. The Go binary needs no C compiler or cgo; the template
-is a runtime input. See [generation fixtures](testdata/generation/README.md).
+executable directory/PATH. If no external candidate is found, it uses the embedded,
+byte-identical pinned SQLite 3.50.4 template; no template installation is needed.
+An explicit `-T` must still name a readable file, and errors reading a selected
+external template are not hidden by the fallback. The Go binary needs no C
+compiler or cgo. See [generation fixtures](testdata/generation/README.md).
 
 See [reference provenance and reproduction](docs/REFERENCE.md),
 [architecture](docs/ARCHITECTURE.md), [porting log](docs/PORTING.md), and
