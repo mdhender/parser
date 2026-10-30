@@ -1,0 +1,5 @@
+// Reprint of input file "grammar.y".
+// Symbols:
+//   0 $            1 EXTRA        2 NO           3 BASE         4 start     
+start ::= NO.
+start ::= BASE.

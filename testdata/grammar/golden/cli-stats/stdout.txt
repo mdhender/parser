@@ -1,0 +1,16 @@
+// Reprint of input file "grammar.y".
+// Symbols:
+//   0 $            1 ITEM         2 start        3 list      
+list ::= list ITEM.
+start ::= list.
+list ::=.
+Parser statistics:
+  terminal symbols...................     2
+  non-terminal symbols...............     2
+  total symbols......................     4
+  rules..............................     3
+  states.............................     0
+  conflicts..........................     0
+  action table entries...............     0
+  lookahead table entries............     0
+  total table size (bytes)...........     0

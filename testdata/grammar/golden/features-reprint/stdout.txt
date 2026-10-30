@@ -1,0 +1,12 @@
+// Reprint of input file "grammar.y".
+// Symbols:
+//   0 $            3 PLUS         6 EQ           9 UNUSED      12 error     
+//   1 ID           4 MINUS        7 ANY         10 expr      
+//   2 NUMBER       5 STAR         8 KW          11 start     
+expr ::= expr PLUS|MINUS expr.
+expr ::= ID|NUMBER.
+expr ::=.
+start ::= expr.
+expr ::= expr STAR expr.
+expr ::= MINUS expr. [STAR]
+expr ::= error.

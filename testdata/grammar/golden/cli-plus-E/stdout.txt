@@ -1,0 +1,7 @@
+// Reprint of input file "grammar.y".
+// Symbols:
+//   0 $              2 YES            4 BASE        
+//   1 EXTRA          3 SHORTCIRCUIT   5 start       
+start ::= YES.
+start ::= SHORTCIRCUIT.
+start ::= BASE.

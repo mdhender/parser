@@ -1,0 +1,39 @@
+grammar	7	6	0	0	-	0
+decl	name	436f6e646974696f6e616c
+decl	include	236c696e65203320226772616d6d61722e79220a20616c70686128293b20
+decl	code	-
+decl	token_destructor	-
+decl	default_destructor	-
+decl	token_prefix	-
+decl	syntax_error	-
+decl	parse_accept	-
+decl	parse_failure	-
+decl	stack_overflow	-
+decl	extra_argument	-
+decl	extra_context	-
+decl	token_type	-
+decl	default_type	-
+decl	realloc	-
+decl	free	-
+decl	stack_size	-
+decl	start_symbol	-
+symbol	24	0	1	1	-1	3	-	-	0	-	0		
+symbol	4558545241	1	0	1	-1	3	-	-	0	-	0		
+symbol	594553	2	0	1	-1	3	-	-	0	-	0		
+symbol	4f555445525f4f4e4c59	3	0	1	-1	3	-	-	0	-	0		
+symbol	53484f525443495243554954	4	0	1	-1	3	-	-	0	-	0		
+symbol	42415345	5	0	1	-1	3	-	-	0	-	0		
+symbol	7374617274	6	1	4	-1	3	-	-	0	-	0		3,2,1,0
+symbol	7b64656661756c747d	7	1	1	-1	3	-	-	0	-	0		
+rule	0	0	7374617274	-	11	0	-	1	0	-	1
+rhs	594553	0	-	
+rule	1	1	7374617274	-	19	0	-	1	0	-	1
+rhs	4f555445525f4f4e4c59	0	-	
+rule	2	2	7374617274	-	23	0	-	1	0	-	1
+rhs	53484f525443495243554954	0	-	
+rule	3	3	7374617274	-	25	0	-	1	0	-	1
+rhs	42415345	0	-	
+define	414c504841	1
+define	47414d4d41	0
+define	4f55544552	1
+define	554e55534544	0

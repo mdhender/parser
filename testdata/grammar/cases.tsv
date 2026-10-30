@@ -1,0 +1,59 @@
+# name<TAB>operation<TAB>input (fixtures basename, sqlite, missing)<TAB>options
+minimal-snapshot	snapshot	minimal.y
+minimal-reprint	reprint	minimal.y
+no-tokens	snapshot	no-tokens.y
+eof-incomplete	snapshot	eof-incomplete.y
+features-snapshot	snapshot	features.y
+features-no-lines	snapshot	features.y	-l
+features-reprint	reprint	features.y
+features-preprocess	preprocess	features.y
+empty-values	snapshot	empty-values.y
+conditional-default	snapshot	preprocess.y
+conditional-defines	snapshot	preprocess.y	-DUNUSED -DGAMMA=1 -DBETA -DALPHA -UBETA -DOUTER
+conditional-duplicates	snapshot	preprocess.y	-DALPHA -DALPHA -UALPHA -DUNREACHED
+conditional-inner	snapshot	preprocess.y	-DOUTER -DINNER -DBETA -DALPHA
+conditional-preprocess	preprocess	preprocess.y	-DALPHA -DBETA -DOUTER -DINNER
+conditional-reprint	reprint	preprocess.y	-DALPHA -DBETA
+preprocess-quirks	snapshot	preprocess-quirks.y	-DALPHA
+preprocess-quirks-print	preprocess	preprocess-quirks.y	-DALPHA
+preprocess-quirks-reprint	reprint	preprocess-quirks.y	-DALPHA
+destructor-repeat	snapshot	destructor-repeat.y
+destructor-repeat-no-lines	snapshot	destructor-repeat.y	-l
+nonascii-symbol	snapshot	nonascii-symbol.y
+parser-errors	snapshot	parser-errors.y
+parser-errors-reprint	reprint	parser-errors.y
+unclosed-code	snapshot	unclosed-code.y
+unclosed-string	snapshot	unclosed-string.y
+preprocess-error	snapshot	preprocess-error.y	-DALPHA
+preprocess-error-print	preprocess	preprocess-error.y	-DALPHA
+preprocess-unclosed	snapshot	preprocess-unclosed.y
+empty	snapshot	empty.y
+missing	snapshot	missing
+invalid-option	reprint	minimal.y	-Z
+cli-stats	reprint	minimal.y	-s
+cli-generation-flags	reprint	minimal.y	-b -c -dout -m -p -q -r -S -Tmissing -fignored -Iignored -Oignored -Wignored
+cli-ignored-empty	reprint	minimal.y	-f -I -O -W
+cli-plus-g	reprint	minimal.y	+g -g
+cli-plus-g-preprocess	preprocess	minimal.y	+g
+cli-g-trailing	reprint	minimal.y	-gtrailing
+cli-g-equals	reprint	minimal.y	-g=value
+cli-minus-E	reprint	preprocess.y	-E -DALPHA
+cli-plus-E	reprint	preprocess.y	-E +E -DALPHA
+cli-E-trailing	reprint	preprocess.y	-Etrailing -DALPHA
+cli-bare-D	reprint	preprocess.y	D=ALPHA
+cli-bare-U	reprint	preprocess.y	-DALPHA U=ALPHA
+cli-bare-D-U	reprint	preprocess.y	D=ALPHA U=ALPHA
+cli-bare-g-invalid	reprint	minimal.y	g=1
+cli-double-dash	reprint	minimal.y	--
+cli-long-caret	reprint	minimal.y	-DLONG_MACRO_TO_EXERCISE_CARET_PLACEMENT --invalid-option
+cli-separated-template	reprint	minimal.y	-T missing
+cli-version	reprint	minimal.y	-x extra-filename.y
+cli-version-missing-input	reprint	missing	-x
+cli-version-unknown	reprint	minimal.y	-x -Z
+sqlite-default	snapshot	sqlite
+sqlite-no-lines	snapshot	sqlite	-l
+sqlite-features	snapshot	sqlite	-DSQLITE_ENABLE_UPDATE_DELETE_LIMIT -DSQLITE_ENABLE_ORDERED_SET_AGGREGATES -DSQLITE_ENABLE_MATH_FUNCTIONS
+sqlite-omit	snapshot	sqlite	-DSQLITE_OMIT_TRIGGER -DSQLITE_OMIT_WINDOWFUNC -DSQLITE_OMIT_VIRTUALTABLE -DSQLITE_OMIT_CTE
+sqlite-undefine	snapshot	sqlite	-DSQLITE_OMIT_TRIGGER -DSQLITE_OMIT_WINDOWFUNC -USQLITE_OMIT_TRIGGER
+sqlite-reprint	reprint	sqlite
+sqlite-preprocess	preprocess	sqlite	-DSQLITE_OMIT_TRIGGER -DSQLITE_OMIT_WINDOWFUNC

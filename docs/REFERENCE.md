@@ -147,8 +147,31 @@ GOTOOLCHAIN=local GOPROXY=off CGO_ENABLED=0 go test ./...
 GOTOOLCHAIN=local GOPROXY=off CGO_ENABLED=0 go vet ./...
 ```
 
-The Go test checks checked-in source and golden hashes. It neither executes C
-nor claims to test a Go generator (none exists at Milestone A).
+The reference Go test checks checked-in source and golden hashes. Milestone B's
+grammar tests additionally compare the Go command against checked-in C grammar
+expectations. Neither ordinary test executes C or generates a C parser.
+
+## Milestone B grammar oracle
+
+The pin, build configuration, and final-artifact goldens above remain unchanged.
+`reference/grammar-snapshot.c` is a separate instrumentation driver that includes
+pristine `sqlite/tool/lemon.c` with a renamed entry point. It repeats upstream
+initialization and symbol/rule indexing, calls `FindRulePrecedences`, and dumps
+grammar metadata before automaton construction. The pinned source is not edited.
+
+`scripts/test-grammar.sh` builds that driver and an uninstrumented C executable
+with `cc -o EXECUTABLE SOURCE` (no additional compiler flags), plus the Go command
+with `CGO_ENABLED=0`. It sets `LC_ALL=C`, `TZ=UTC`, `GOTOOLCHAIN=local`,
+`GOPROXY=off`, and `GOSUMDB=off`. Each case uses isolated directories, the same
+literal relative filename `grammar.y`, and executable argv[0] `./lemon`.
+The manifest records all options in order. Failures retain compiler/platform/Go
+versions, build commands, the case manifest, binaries, inputs, and process outputs.
+
+Snapshots use the instrumented driver; preprocessing/reprints/CLI diagnostics
+use pristine C. These are intermediate grammar comparisons, **not** replacements
+for the uninstrumented `-S parse.y` final-artifact baseline. Their fixtures,
+snapshot schema, and explicit regeneration command are documented in
+[`testdata/grammar/README.md`](../testdata/grammar/README.md).
 
 ## Golden artifact hashes
 

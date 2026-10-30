@@ -1,0 +1,40 @@
+// Declarations, aliases, content flags, classes, inline compounds and actions.
+%name FeatureParser
+%include { /* café: raw UTF-8 and nested braces */
+static const char *brace = "}";
+static const char quote = '\'';
+/* { ignored } */
+}
+%include { /* appended include */ }
+%code { /* trailing code */ }
+%token_destructor { release($$); }
+%default_destructor { release_default($$); }
+%token_prefix TK_
+%syntax_error { syntax(); }
+%parse_accept { accepted(); }
+%parse_failure { failed(); }
+%stack_overflow { overflow(); }
+%extra_argument {void *context}
+%extra_context {void *allocator}
+%token_type {Token}
+%default_type {Node *}
+%realloc custom_realloc
+%free custom_free
+%stack_size 128
+%start_symbol start
+%token ID NUMBER PLUS MINUS STAR EQ ANY KW UNUSED .
+%left PLUS MINUS .
+%right STAR .
+%nonassoc EQ .
+%fallback ID KW .
+%wildcard ANY .
+%token_class additive PLUS |MINUS .
+%type expr {Node *}
+%destructor expr { destroy($$); }
+start ::= expr .
+expr(result) ::= expr(left) additive(op) expr(right). { result = combine(left,op,right); }
+expr ::= expr STAR expr .
+expr ::= MINUS expr . [STAR]
+expr(value) ::= ID|NUMBER(item) . { value = atom(item); }
+expr ::= error . {NEVER-REDUCE}
+expr ::= . {}

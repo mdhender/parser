@@ -1,12 +1,12 @@
-# Pinned Lemon architecture — Milestone A
+# Pinned Lemon architecture — Milestone B
 
 ## Scope and evidence
 
-This is initial, source-backed architecture documentation for a faithful Go
-port, **not an implementation**. No Go generator, scanner, parser runtime,
-compatibility layer, or C-versus-Go verification is implemented by this
-milestone. The C reference baseline is verified separately; C code embedded
-in grammars is not translated to Go here.
+This document describes the complete C pipeline and the implemented Go grammar
+front end. Milestone B implements preprocessing, scanning, declarations, rules,
+symbols, rule numbering, precedence assignment, and grammar reprinting.
+Automaton construction, tables, C emission, and a parser runtime are not Go
+features yet. C code embedded in grammars remains opaque text.
 
 The reference is SQLite **3.50.4**, Fossil revision
 `4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3`.
@@ -17,7 +17,47 @@ upstream branch. All 6,056 lines of
 [`lempar.c`](../reference/sqlite/tool/lempar.c) and
 [`parse.y`](../reference/sqlite/src/parse.y). See
 [REFERENCE.md](REFERENCE.md) for provenance and executed baseline checks;
-source analysis here does not establish Go executable compatibility.
+source analysis alone does not establish Go executable compatibility. The
+Milestone B snapshot and command comparisons are documented in
+[COMPATIBILITY.md](COMPATIBILITY.md).
+
+### Implemented Go ownership and translation boundaries
+
+`cmd/lemon/main.go` passes process arguments and streams to `lemon.Run`, then
+exits with its status. Everything else lives in `internal/lemon`:
+
+| File | C correspondence and responsibility |
+| --- | --- |
+| `lemon.go`, `options.go` | Grammar-stage `main`, option scanning, D/U callbacks, file input, early exit modes. |
+| `preprocess.go` | `eval_preprocessor_boolean`, `preprocess_input`; byte offsets and used-define tracking. |
+| `scanner.go` | The scanning portion of `Parse`; comments, literals, code blocks, token source lines. |
+| `parser.go` | `pstate`, `parseonetoken`; same parser states, recovery boundaries, and declaration slots. |
+| `grammar.go` | Grammar, symbol, and rule ownership; `Symbol_new`/lookup, `Symbolcmpp`, action-first numbering/`Rule_sort`, `FindRulePrecedences`. |
+| `output.go` | `Reprint`/`rule_print` and project-only deterministic snapshot serialization. |
+
+All mutable tables, define usage, parser state, and diagnostics belong to one
+invocation; unlike C's process statics, repeated Go calls do not share state.
+Named symbol identity is represented by pointers. Lookup maps never supply
+iteration order: insertion-order slices supply symbol order, stable partitioning
+preserves it within symbol groups, and unique `IRule` values sort rules. Global
+rule order is a slice, while the distinct reverse-source-order `NextLHS` chain
+is retained. Anonymous compounds have independent symbol objects; references
+to named token classes share the same mutable symbol, just as in C.
+
+Go strings own immutable byte text rather than interned C buffers. Content
+equality replaces interned-string pointer equality; nullable `*string` fields
+retain the crucial absent/explicit-empty distinction. Future emission must
+continue comparing text by value, not by Go string-pointer address. C allocation
+pools and hash bucket layout are not emulated because they do not determine
+grammar-stage traversal. All classification uses explicit ASCII byte predicates
+matching the oracle's `LC_ALL=C`, not Unicode or ambient locale rules.
+
+`--grammar-snapshot` stops after `FindRulePrecedences`; upstream `-g` stops
+before that inference and therefore displays explicit precedence marks only.
+The C instrumentation driver includes pristine `lemon.c` and repeats only its
+grammar-stage initialization/indexing, stopping at the same snapshot boundary.
+It never substitutes for the uninstrumented final-artifact oracle. Snapshot
+schema and commands are in [the fixture guide](../testdata/grammar/README.md).
 
 ## 1. Main execution flow
 
@@ -354,4 +394,6 @@ Important fidelity hazards for subsequent milestones:
   escaping, template selection, and unchanged-header behavior are observable.
   C allocator failure, assertions, and malformed-input bugs are not proof of a
   portable specification; capture reference behavior before deciding fidelity
-  policy. No such Go verification is implemented in Milestone A.
+  policy. Milestone B compares grammar-stage snapshots and diagnostics, not
+  the automaton or generated C. See the compatibility boundary for explicitly
+  excluded undefined C behavior.

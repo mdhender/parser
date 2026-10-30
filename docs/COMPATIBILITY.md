@@ -1,14 +1,12 @@
-# Pinned Lemon surface inventory — Milestone A
+# Pinned Lemon compatibility — Milestone B
 
 ## Status and pin
 
-**No Go support or Go verification is implemented. No compatibility is claimed.**
-Every entry below is an inventory of the C reference, not a Go feature checklist
-with passing results. Milestone A supplies pinned C sources, golden fixtures,
-baseline scripts, and automated reference reproducibility checks, but no Go
-translation, generator, or C-versus-Go comparison. All inventoried features
-remain pending implementation and differential verification; none is currently
-declared excluded from the eventual compatibility target.
+**Grammar processing is implemented and reference-verified for the cases
+below. C parser generation is not implemented; no parser-output or runtime
+compatibility is claimed.** Milestone A's reference baseline remains unchanged.
+Milestone B adds the Go executable, offline grammar goldens, and explicit
+C-versus-Go differential checks.
 
 Reference: SQLite **3.50.4**, Fossil revision
 `4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3`.
@@ -17,15 +15,64 @@ Sources are [`lemon.c`](../reference/sqlite/tool/lemon.c) (6,056 lines),
 [`parse.y`](../reference/sqlite/src/parse.y). `L` ranges below refer to
 `lemon.c` unless another file is named. See [REFERENCE.md](REFERENCE.md) for
 source provenance, the selected configuration, artifact hashes, and executed
-baseline checks. Only that configuration's C reproducibility has been tested;
-the full option/directive matrix below has not been exercised.
+baseline checks. The tested grammar-stage matrix is recorded in
+[`testdata/grammar/cases.tsv`](../testdata/grammar/cases.tsv); its expectations
+come from pinned C, never from Go output.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the processing pipeline and hazards.
+
+## Executed comparisons and scope
+
+`scripts/test-grammar.sh` rebuilds both C oracles and the Go command offline.
+All 58 manifest cases pass both comparisons, including the CLI cases below.
+In separate directories each receives the same relative `grammar.y` path and
+`./lemon` argv[0]. It checks C against saved goldens and Go against C, comparing
+stdout, stderr, shell exit status, and the complete generated-file inventory.
+Both strict bytes and `diff -bw` must match, without normalization. Failure
+artifacts are retained with a reproduction command. `--reference-only` checks
+goldens and repeated C execution without building Go. Ordinary `go test ./...`
+uses the same checked-in expectations without C, networking, or dependencies.
+
+The primary grammar snapshot covers all parsed declaration text, source lines,
+nullable versus empty actions/types/destructors, symbol indices/types/usage,
+fallback/wildcard, associativity/precedence, content flags, constituent ordering,
+per-LHS rule chains, original and action-first rule IDs, aliases, NEVER-REDUCE,
+inferred rule precedence, and used defines. The instrumentation includes the
+pristine source in a separate driver and stops before FIRST sets. `-E` and `-g`
+comparisons use the uninstrumented C executable. See the
+[fixture guide](../testdata/grammar/README.md) for the exact snapshot format.
+
+SQLite `parse.y` is compared with empty feature flags (the baseline grammar),
+with `-l`, with UPDATE_DELETE_LIMIT/ORDERED_SET_AGGREGATES/MATH_FUNCTIONS enabled,
+with TRIGGER/WINDOWFUNC/VIRTUALTABLE/CTE omitted, and with a define subsequently
+undefined. Smaller fixtures exercise every declaration below, code-block
+lexing, aliases, empty productions/actions, inline and named multiterminals,
+precedence, error-symbol syntax, and conditional branches. Malformed fixtures
+exercise scanner errors, parser recovery, duplicate declarations, preprocessor
+syntax/exclusion errors, missing input, empty input, and invalid options.
+The 1000/1001 RHS-symbol boundary is also covered through the Go command API.
+
+Repeated offline runs check determinism and isolation between invocations.
+Unimplemented stages are FIRST/nullable sets, configurations/states, lookahead,
+conflicts, tables/compression, alias rewriting, C/template emission, and runtime
+validation. Parsing `%start_symbol`, `error`, hooks, and destructors does not
+implement their automaton/emitter/runtime effects.
 
 ## Command-line options
 
-The complete `main.options` table is at **L1753–1780**. All rows have Go support
-**not implemented**, verification **not implemented**. Flags default to zero;
-therefore compression and state resorting are enabled unless disabled.
+The complete `main.options` table is at **L1753–1780**. The table inventories
+upstream behavior; the following status groups limit the Go claim:
+
+| Options | Go support and verification boundary |
+| --- | --- |
+| `-D`, `-U`, `-E`, `-g`, `-l` | Implemented; differential grammar/preprocessor/reprint coverage. `-l` is verified for stored declaration text, not emitted C. |
+| `-x` | Version early exit implemented and differentially verified; does not identify the pin. |
+| `-s` | Implemented and differentially verified in `-g` mode; grammar counts are real, automaton/table counts remain zero as in C's `-g -s`. |
+| `-f`, `-I`, `-O`, `-W` | Ignored flag-form placeholders implemented and differentially verified with empty/nonempty suffixes. |
+| `-b`, `-c`, `-d`, `-m`, `-p`, `-q`, `-r`, `-S`, `-T` | Accepted with no effect in grammar-only modes, just as in C; this is differentially verified. Their generation/report/template behavior is not implemented or claimed. Normal generation fails explicitly. |
+| `--grammar-snapshot` | Project-only extension, not an upstream option. Stops after inferred precedence assignment. |
+
+No grammar-stage byte differences are permitted. Unknown-option syntax and
+upstream help formatting are preserved; generation defaults remain future work.
 
 | Option | Pinned C behavior |
 | --- | --- |
@@ -82,8 +129,11 @@ paths (**L1783–1913**); `PrintAction` (**L3477–3540**); `file_makename`
 ## Grammar declarations
 
 The complete keyword dispatch in `parseonetoken` is at **L2600–2690**.
-All entries below have Go support **not implemented**, verification
-**not implemented**. Keywords are case-sensitive. Unknown keywords diagnose.
+Every declaration below is **implemented and snapshot-verified for parsing and
+stored metadata**, principally by `features-snapshot` and SQLite cases. Effects
+on generated C, conflict resolution, and runtime behavior remain **not
+implemented**, even where the upstream description below mentions them.
+Keywords are case-sensitive. Unknown keywords diagnose.
 
 Most single-argument declarations consume one identifier, quoted argument, or
 brace block, **without a terminating period**. Quotes/braces delimit opaque text;
@@ -149,13 +199,18 @@ Alias rewriting is textual, not a full C lexer (`translate_code`,
 **L3968–4162**). C and C++ style comments are accepted by the grammar scanner;
 identifiers and character classification are byte-oriented. Lack of an EOF
 state check means the source does not promise comprehensive diagnostics for
-unfinished grammar constructs. No Go behavior for malformed input is verified.
+unfinished grammar constructs. Representative malformed-input diagnostics and
+acceptance of an incomplete final rule are differentially verified; exhaustive
+malformed-input/crash equivalence is not claimed. All syntax above is stored by
+the Go parser, but `@ALIAS`, overwrite comments, `$$`, and `error` have no
+rewriting or runtime effects until later milestones.
 
 ## Grammar preprocessor directives
 
 `preprocess_input` (**L3016–3072**) runs before scanning the grammar, comments,
-or embedded C. All rows have Go support **not implemented**, verification
-**not implemented**.
+or embedded C. All directives below are **implemented and differentially
+verified**, including nested exclusion, defines/undefines, short-circuiting,
+preserved newlines, and representative malformed-input diagnostics.
 
 | Directive | Recognition and behavior |
 | --- | --- |
@@ -222,5 +277,25 @@ These are source-derived cautions, **not executed test results**:
    (`parse.y:L72–105`). Runtime behavior must be compared with those settings
    explicit, not assumed from generic template defaults.
 
-This inventory records the pinned surface and known source-level hazards only.
-All Go implementation and all Go compatibility verification remain future work.
+## Intentional deviations and exclusions
+
+- Normal parser-generation requests fail with an explicit Milestone B message
+  and no artifacts, rather than running an incomplete automaton/emitter.
+- `--grammar-snapshot` is an inspection extension, not a generated parser file.
+- Go uses per-invocation memory and immutable strings rather than process-static
+  allocation pools and interned character pointers. Traversal and identity of
+  named symbols remain deterministic; absent and allocated-empty text differ.
+- ASCII byte classification matches the fixed C locale of the oracle. Other C
+  locales, allocator failures, C integer-size/platform differences, and files
+  changing while read are outside this milestone's verification claim.
+- Undefined C behavior is not a compatibility requirement. In particular the
+  pinned scanner can read beyond NUL in unfinished literals/comments inside a
+  code block, and bare ignored-placeholder callbacks (`f=...`, `I=...`, `O=...`,
+  `W=...`) can call a null function pointer. Go bounds scanning at EOF and ignores
+  those placeholders safely. Exact C crash behavior is excluded. A missing RHS
+  close-parenthesis diagnostic with no LHS alias uses `(null)` like this Linux C
+  runtime, but that C null-string formatting is not portable.
+
+There are no unexplained byte differences in the executed grammar comparisons.
+No generated C/header/report/SQL compatibility or SQLite runtime integration is
+claimed for the Go command. Milestone C requires separate authorization.

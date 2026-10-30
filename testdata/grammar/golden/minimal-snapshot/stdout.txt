@@ -1,0 +1,30 @@
+grammar	4	2	1	0	-	0
+decl	name	-
+decl	include	-
+decl	code	-
+decl	token_destructor	-
+decl	default_destructor	-
+decl	token_prefix	-
+decl	syntax_error	-
+decl	parse_accept	-
+decl	parse_failure	-
+decl	stack_overflow	-
+decl	extra_argument	-
+decl	extra_context	-
+decl	token_type	-
+decl	default_type	-
+decl	realloc	-
+decl	free	-
+decl	stack_size	-
+decl	start_symbol	-
+symbol	24	0	1	1	-1	3	-	-	0	-	0		
+symbol	4954454d	1	0	1	-1	3	-	-	0	-	0		
+symbol	7374617274	2	1	1	-1	3	-	-	0	-	0		0
+symbol	6c697374	3	1	4	-1	3	-	-	0	-	0		2,1
+symbol	7b64656661756c747d	4	1	1	-1	3	-	-	0	-	0		
+rule	1	0	6c697374	-	3	3		0	0	-	2
+rhs	6c697374	1	-	
+rhs	4954454d	0	-	
+rule	0	1	7374617274	-	2	0	-	1	0	-	1
+rhs	6c697374	1	-	
+rule	2	2	6c697374	-	4	0	-	1	0	-	0

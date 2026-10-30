@@ -1,0 +1,2 @@
+%ifdef ABSENT
+start ::= TOKEN .

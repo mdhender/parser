@@ -1,0 +1,6 @@
+// Reprint of input file "grammar.y".
+// Symbols:
+//   0 $            1 ITEM         2 start        3 list      
+list ::= list ITEM.
+start ::= list.
+list ::=.

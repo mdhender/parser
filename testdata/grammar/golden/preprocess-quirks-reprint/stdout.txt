@@ -1,0 +1,9 @@
+// Reprint of input file "grammar.y".
+// Symbols:
+//   0 $                                3 SHORTCIRCUIT_SKIPS_SYNTAX     
+//   1 WHOLE_EXPRESSION_SHORTCIRCUIT    4 ACTIVE_WITHOUT_ENDIF          
+//   2 PARENTHESES_RESTORE_EVALUATION   5 start                         
+start ::= WHOLE_EXPRESSION_SHORTCIRCUIT.
+start ::= PARENTHESES_RESTORE_EVALUATION.
+start ::= SHORTCIRCUIT_SKIPS_SYNTAX.
+start ::= ACTIVE_WITHOUT_ENDIF.

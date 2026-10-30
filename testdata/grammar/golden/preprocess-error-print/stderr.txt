@@ -1,0 +1,2 @@
+%if syntax error on line 1.
+   ALPHA && @ <-- syntax error here

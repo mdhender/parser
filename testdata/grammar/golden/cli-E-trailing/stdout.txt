@@ -1,0 +1,26 @@
+%name Conditional
+            
+%include { alpha(); }
+     
+                        
+      
+            
+%token EXTRA .
+      
+                             
+start ::= YES .
+     
+              
+      
+            
+            
+                  
+     
+                      
+      
+      
+                      
+start ::= SHORTCIRCUIT .
+      
+start ::= BASE .
+

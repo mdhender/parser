@@ -1,0 +1,26 @@
+// Lemon short-circuits the remaining expression, not C-precedence subterms.
+                            
+                                      
+     
+start ::= WHOLE_EXPRESSION_SHORTCIRCUIT .
+      
+                              
+start ::= PARENTHESES_RESTORE_EVALUATION .
+      
+                                     
+start ::= SHORTCIRCUIT_SKIPS_SYNTAX .
+      
+             
+                                                    
+                           
+      
+      
+%include {
+  %if ALPHA
+  int indented_directive_is_preserved;
+  %endif
+}
+// An active conditional missing its closing endif is accepted upstream.
+            
+start ::= ACTIVE_WITHOUT_ENDIF .
+
