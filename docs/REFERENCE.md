@@ -1,5 +1,8 @@
 # Pinned SQLite reference
 
+Maintainer record: [development index](development/README.md). For command usage,
+see the [CLI reference](reference/cli.md).
+
 ## Provenance
 
 Milestone A uses the official **SQLite 3.50.4** release (2025-07-30), a

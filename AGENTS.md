@@ -21,6 +21,13 @@ offline Go tests, and explicit C reference/differential scripts. See
 The layout proposed in `port-prompt.md` is guidance rather than a required file
 layout.
 
+User documentation follows Diátaxis at `docs/README.md`: tutorials, how-to guides,
+reference, and explanation. Maintainer navigation and validation commands live
+at `docs/development/README.md`. Keep the four original engineering records at
+their stable paths; link to them rather than duplicating their evidence in user
+pages. Run `scripts/test-docs.sh` when changing the first-parser tutorial or its
+examples (requires a C compiler; remains separate from offline Go tests).
+
 ## Implementation principles
 
 - Use only the Go standard library and built-in testing package. The finished Go

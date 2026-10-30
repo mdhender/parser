@@ -1,0 +1,93 @@
+# Development and maintainer records
+
+For using Lemon, start at the [user documentation index](../README.md). This
+area is for maintaining the Go port and reproducing its evidence.
+
+## Engineering records
+
+The existing records remain at their original paths to preserve links from
+source, scripts, fixtures, commits, and issue discussions. They belong to the
+maintainer documentation, not to the user-facing reference:
+
+- [Pinned reference provenance and reproduction](../REFERENCE.md)
+- [Implementation architecture and C-to-Go mapping](../ARCHITECTURE.md)
+- [Milestone porting log](../PORTING.md)
+- [Detailed compatibility evidence and exclusions](../COMPATIBILITY.md)
+- [Port specification](../../port-prompt.md) and [agent/contributor constraints](../../AGENTS.md)
+- [Release history](../../CHANGELOG.md)
+
+## Go checks
+
+Use the toolchain in [`go.mod`](../../go.mod). The generator executable has no
+external dependencies; the repository root's version API uses a semver module.
+If its module is not cached, fetch it once before offline testing:
+
+```sh
+go mod download
+```
+
+Then run from the repository root (no C compiler or network required):
+
+```sh
+GOTOOLCHAIN=local GOPROXY=off CGO_ENABLED=0 go test ./...
+GOTOOLCHAIN=local GOPROXY=off CGO_ENABLED=0 go vet ./...
+```
+
+## Documentation examples
+
+With Go, Bash, a C compiler named `cc`, awk, and standard shell utilities:
+
+```sh
+scripts/test-docs.sh
+```
+
+This executes the tutorial's actual shell block, generates with the embedded
+template in a new temporary directory, compiles the supplied C driver, and
+requires output exactly `Result: 7` followed by a newline. It is separate from
+offline Go tests so those tests never require a C compiler.
+
+## Explicit C reference comparisons
+
+These commands need Bash, `cc` (or `CC`), GNU coreutils/diffutils, and Go for
+C-versus-Go checks. They do not download sources or refresh goldens:
+
+```sh
+scripts/test-reference.sh
+scripts/test-grammar.sh
+scripts/test-automaton.sh
+scripts/test-tables.sh
+scripts/test-generation.sh
+```
+
+They compare stdout, stderr, exit status, file inventories, exact bytes, and
+`diff -bw`, retaining failure artifacts and reproduction commands. See the
+[grammar](../../testdata/grammar/README.md),
+[automaton](../../testdata/automaton/README.md),
+[table](../../testdata/tables/README.md), and
+[generation](../../testdata/generation/README.md) fixture guides for modes and schemas.
+Do not update expectations to hide a Go/C divergence.
+
+The full acceptance command is **Linux ELF-specific** and additionally needs
+`readelf` from binutils. It runs all the above checks, repeats Go tests, verifies
+a cgo-disabled binary, and compares two standalone runs with no tools on PATH:
+
+```sh
+scripts/test-compatibility.sh
+```
+
+## Optional SQLite source-tree integration
+
+Provide a local, hash-verified official SQLite 3.50.4 archive; these commands do
+not download it. Additional requirements include make, unzip, and Tcl runtime
+and development files:
+
+```sh
+scripts/test-compatibility.sh /absolute/path/to/sqlite-src-3500400.zip
+# Or run only the supplementary integration:
+scripts/test-sqlite.sh /absolute/path/to/sqlite-src-3500400.zip
+```
+
+The [SQLite integration guide](../../testdata/sqlite/README.md) records archive
+provenance, build configuration, selected regressions, and failure reproduction.
+Compilation/runtime checks supplement artifact comparisons; they do not replace
+them or establish exhaustive feature/platform compatibility.

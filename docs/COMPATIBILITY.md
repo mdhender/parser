@@ -1,5 +1,8 @@
 # Pinned Lemon compatibility — Milestone F
 
+Maintainer evidence: [development index](development/README.md). For the concise
+user-facing boundary, see [compatibility reference](reference/compatibility.md).
+
 ## Status and pin
 
 **Grammar processing, parser automaton construction, table generation, and C

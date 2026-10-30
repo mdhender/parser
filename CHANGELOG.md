@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Organize user documentation by Diátaxis: a runnable first-parser tutorial,
+  installation/generation/template/troubleshooting guides, syntax and CLI
+  references, and conceptual explanations (issues #6–#12). Keep engineering
+  records at stable paths behind a separate development index. Add an explicit
+  C-backed documentation example test, separate from offline Go tests.
 - Embed the pristine pinned SQLite 3.50.4 parser template as the final fallback
   when no external template is found (issue #1). Preserve external lookup order
   and explicit `-T` errors. No template installation is required for default

@@ -1,5 +1,8 @@
 # Porting log
 
+Maintainer record: [development index](development/README.md). For using the tool,
+start at the [user documentation index](README.md).
+
 ## Milestone A — Pinned C reference baseline
 
 - Reference: SQLite 3.50.4, Fossil check-in
@@ -396,3 +399,34 @@ Milestone A goldens remain unchanged.
   behavior remain outside the verified boundary. PATH precedence now has Go
   coverage, not a new C differential case. Preserve the full compatibility checks
   for future changes.
+
+## Issues #6–#12 — User documentation
+
+- Added the [Diátaxis index](README.md), separating a learning tutorial,
+  task-oriented guides, syntax/behavior reference, and conceptual explanations.
+  The README now starts with a minimal working generation command; detailed
+  validation commands moved to the [development index](development/README.md).
+- Kept all four engineering records at their original paths, preserving
+  provenance and existing links. User reference pages link to evidence rather
+  than copying the milestone reports. No pinned source, fixture, generation
+  algorithm, or existing validation script changed.
+- Added complete tutorial grammar and C driver under `docs/tutorials/first-parser/`.
+  `scripts/test-docs.sh` compares the displayed examples to the supplied files,
+  executes the tutorial's shell block in a temporary generation directory,
+  compiles the generated parser, and requires exactly `Result: 7` plus newline.
+  This explicit C-backed check is separate from offline Go tests.
+- Validated README and how-to commands in a clean source copy, including explicit,
+  adjacent, and current-directory templates, output selection, preprocessing,
+  statistics, and the expected missing-template diagnostic. A command build with
+  an empty module cache and networking disabled confirmed the executable's
+  standard-library-only dependency boundary; local installation also passed.
+- Validation: documentation example test, local Markdown link/anchor audit,
+  offline `go test ./...`, `go vet ./...`, and `scripts/test-compatibility.sh`
+  passed on Linux x86_64. The latter repeats Go tests and all 196 C/Go
+  differential cases, including generated-C runtime checks and the two
+  standalone embedded-template runs. Optional SQLite archive integration was
+  not rerun for this documentation change.
+- Compatibility claims remain limited to the pinned matrix and recorded
+  platform. Next recommended task: preserve documentation example checks when
+  changing examples or the generated API; broader compatibility work remains
+  separately scoped.

@@ -1,5 +1,8 @@
 # Pinned Lemon architecture — Milestone F
 
+Maintainer record: [development index](development/README.md). For a conceptual
+introduction, see [how Lemon works](explanation/how-lemon-works.md).
+
 ## Scope and evidence
 
 This document describes the complete C pipeline and the implemented Go grammar
