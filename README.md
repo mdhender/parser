@@ -6,6 +6,11 @@ Lemon grammars with Go actions. The Go commands are equivalent thin wrappers
 around the same generator entry point, `RunGo`; `lemon` has no language flag
 and retains its C behavior.
 
+For LL(1) grammars, the separate **`glime`** command checks/explains predictions
+and generates standalone Go parsers using a predictive stack and deferred typed
+actions. See the [LL(1) tutorial](docs/tutorials/ll1-parser.md) and
+[glime reference](docs/reference/glime.md). It does not change the LALR commands.
+
 The generators need no cgo, C compiler, external Go dependencies, or separately
 installed default template. Building a generated C parser needs a C compiler;
 the generated Go runtime uses only the Go standard library.

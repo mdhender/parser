@@ -186,6 +186,9 @@ func (p *parser) token(x string, line int) {
 			break
 		}
 		p.keyword = x
+		if g.Declarations != nil {
+			g.Declarations[x] = line
+		}
 		p.slot = nil
 		p.lineSlot = nil
 		p.insertLine = true

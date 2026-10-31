@@ -68,6 +68,7 @@ type Rule struct {
 // lookup; ordered slices preserve the C associative arrays' insertion order.
 type Grammar struct {
 	Filename                                                             string
+	Declarations                                                         map[string]int // Optional parse-only declaration source locations.
 	Symbols                                                              []*Symbol
 	Rules                                                                []*Rule
 	StartRule                                                            *Rule

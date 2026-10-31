@@ -492,3 +492,23 @@ Consequently Go disables only the no-code single-symbol bypass pass of table
 compression, retaining actual reductions. The C emitter and pinned template
 are unchanged. See the [Go contract](reference/go-parser.md) for declarations,
 hooks, ownership, and intentionally different CLI/template APIs.
+
+## Independent LL(1) generator — issue #14
+
+`cmd/glime` calls `internal/ll1.Run`. `lemon.ParseGrammar` is the small shared
+frontend boundary: preprocessing, Go-aware scanning, parsed symbol/rule identity,
+source-order indices, and declaration locations, without `prepare` or LR work.
+The old entry points are unchanged; declaration tracking is opt-in for this API.
+
+`internal/ll1/analyze.go` computes independent nullable/FIRST/FOLLOW/SELECT fixed
+points, nullable-prefix left-corner cycles, productivity and reachability.
+Tables map a nonterminal and terminal to a source production; conflicts preserve
+the first entry solely for explanation and prohibit emission. Stable grammar
+slices determine all presentation and emitted table ordering.
+
+`emit.go` and embedded `stack.go.tmpl` generate a standalone complete-input Go
+function. A production frame owns typed RHS storage; a completion task runs its
+action and writes its result into its parent's designated slot. A new expansion
+never reuses an ancestor's storage. Aliases are Go locals, never rewritten text.
+No LR state machine, conflict resolver, packed table, cgo or reflection is used.
+See the [glime contract](reference/glime.md) for supported hooks and exclusions.

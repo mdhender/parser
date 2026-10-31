@@ -12,6 +12,8 @@ have separate homes.
   small parser, with all example files supplied.
 - [Your first Go parser](tutorials/go-parser.md): generate and run a calculator
   with typed Go actions and a Go caller.
+- [Your first LL(1) Go parser](tutorials/ll1-parser.md): check, explain, and
+  generate a predictive calculator with the separate `glime` command.
 
 ## How-to guides — complete a task
 
@@ -24,6 +26,7 @@ have separate homes.
 
 - [Command-line interface](reference/cli.md)
 - [Go generators and runtime API](reference/go-parser.md)
+- [glime LL(1) command and runtime API](reference/glime.md)
 - [Grammar syntax](reference/grammar.md)
 - [Declarations and preprocessor directives](reference/directives.md)
 - [Output files and parser API](reference/output-files.md)
@@ -32,6 +35,7 @@ have separate homes.
 ## Explanation — understand why and how
 
 - [How Lemon works](explanation/how-lemon-works.md)
+- [Why glime uses deferred completion](explanation/ll1.md)
 - [Parser templates](explanation/parser-templates.md)
 - [Lemon versus yacc and Bison](explanation/lemon-vs-yacc.md)
 

@@ -526,3 +526,21 @@ covered. The recovery probe also confirmed that C itself can differ in reduction
 and recovery timing with compression disabled; that difference is not repaired
 in the shared frontend. These checks establish the tested Go contract, not
 exhaustive equivalence for all grammars, actions, templates, or malformed streams.
+
+## LL(1) Go target — issue #14
+
+`glime` is an independent LL(1) generator, not a compatibility mode for the
+LALR runtimes or a reconstruction of historical Lime. It shares only the
+parse-only Lemon frontend. Supported declarations, complete-input API, typed
+zero-value semantics, action timing, hooks and explicit exclusions are specified
+in the [glime reference](reference/glime.md). The recursive strategy is reserved
+and explicitly unimplemented. No automatic grammar transformation is performed.
+
+Offline `internal/ll1` tests verify FIRST/FOLLOW/SELECT and nullable propagation,
+EOF conflicts, all competing rule pairs, left recursion through nullable prefixes,
+nonproductive/undefined symbols, unreachable rules, deterministic explanation,
+and frontend immutability. Executable generated-module cases cover the actual
+calculator grammar (precedence and left-associative subtraction), heterogeneous
+values, nested completion order and failure side effects, epsilon/actionless
+rules, deep nesting, invalid token kinds and malformed streams. This is not a
+claim of equivalence to SQLite's C actions or support for every Lemon directive.

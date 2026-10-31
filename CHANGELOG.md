@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add `glime`, a separate LL(1) Go parser generator (issue #14), with
+  check/explain/generate commands, deterministic predictive analysis and
+  diagnostics, deferred typed stack actions, standalone runtime tests, and
+  a calculator tutorial. Reserve recursive descent with an explicit error;
+  document unsupported Lemon directives. Bump the feature version to 1.2.0.
 - Add the `glcc` and `glemon` Go-parser generators through one shared backend
   (issue #13), with typed actions, heterogeneous values, fallback/wildcard,
   recovery, hooks/destructors, and a self-contained Go runtime. Include command

@@ -51,6 +51,11 @@ The Go calculator tutorial is extracted, generated, and executed by
 `TestGoParsers` builds isolated dependency-free modules and executes generated
 parsers with and without compression; `TestGoCommands` builds/invokes both names.
 
+`go test ./internal/ll1` checks LL(1) analysis and the `glime` command, then
+compiles and executes standalone generated parsers, including the actual
+LL(1) tutorial grammar, nested completion order, heterogeneous values, epsilon,
+deep nesting, and malformed inputs. No C compiler is needed.
+
 For an explicit generated-Go versus pristine generated-C runtime comparison:
 
 ```sh

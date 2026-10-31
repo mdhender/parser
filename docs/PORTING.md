@@ -466,3 +466,44 @@ Milestone A goldens remain unchanged.
   arbitrary-template equivalence is claimed.
 - Next recommended task: expand application-driven Go grammar coverage while
   keeping the pinned C-output matrix separate and unchanged.
+
+## Issue #14 — independent glime LL(1) generator
+
+- Added `cmd/glime` with flags before explicit check/explain/generate
+  subcommands, Go package/output naming, repeatable preprocessing definitions,
+  the default stack strategy and explicit recursive-strategy rejection.
+- Added `internal/lemon/frontend.go`: a parse-only API around the existing
+  preprocessor, Go-aware scanner and grammar parser. It preserves source order
+  and symbol identity and records optional declaration locations. Existing C
+  and Go LALR entry points remain unchanged; no reference sources were changed.
+- Added independent `internal/ll1/analyze.go`: nullable/FIRST/FOLLOW/SELECT
+  fixed points, deterministic prediction tables/explanation, all conflicting
+  production pairs with lookahead overlap, left recursion through nullable
+  prefixes, productivity/undefined checks and unreachable-production warnings.
+  No LR construction, conflict resolution, or packed tables are reused.
+- Added the typed Go emitter and embedded stack template. Each expansion owns
+  its RHS frame and completion marker, so nested/recursive actions run after
+  their children without overwriting parent values. Aliases are ordinary locals,
+  preserving literal/comment content. Heterogeneous types, epsilon, zero-valued
+  actionless rules, accept/syntax/failure hooks and malformed streams are covered.
+- Explicitly reject unsupported Lemon features, including precedence,
+  fallback/wildcard/error, multiterminals, destructors, extra context/arguments,
+  and stack/allocator directives. The runtime accepts a complete token slice
+  with implicit EOF and does not recover. These are documented boundaries,
+  not C compatibility claims or silent grammar transformations.
+- Added an LL(1) calculator tutorial, reference and design pages, and updated
+  navigation and engineering records. Bumped the feature version to 1.2.0.
+- Offline tests compile/execute independent generated modules for arithmetic
+  (including non-associative subtraction controls), heterogeneous values, nested
+  completion order, failure side effects, epsilon, 4,096-level nesting, invalid
+  token kinds, and literal preservation. Malformed token-class LHS input first
+  reproduced a panic; the kept CLI regression now requires clean rejection.
+  Mixed inline comments exposed Go formatter alignment across expanded action
+  statements; a second formatting pass produces stable gofmt output.
+- Validation: `go test ./...`, `go vet ./...`, repeated LL(1) tests,
+  `scripts/test-compatibility.sh` (196 differential cases, exact bytes and
+  `diff -bw`), `scripts/test-docs.sh`, and `scripts/test-go-runtime.sh` passed.
+  The LL(1) tutorial's actual caller printed exactly `Result: 11`. Optional
+  SQLite source-tree integration was not rerun; the reference pin is unchanged.
+- Next recommended task: collect real application LL(1) grammars before
+  deciding whether to extend context support or add the recursive backend.
