@@ -1,7 +1,8 @@
 # Documentation
 
-Lemon turns grammars into **C parsers**. Choose a path by what you need, rather
-than reading every page in order. This documentation follows
+`lemon` turns grammars into **C parsers**; the equivalent `glcc` and `glemon`
+commands generate **Go parsers** using Go actions. Choose a path by what you
+need, rather than reading every page in order. This documentation follows
 [Diátaxis](https://diataxis.fr/): learning, tasks, factual lookup, and understanding
 have separate homes.
 
@@ -9,6 +10,8 @@ have separate homes.
 
 - [Your first C parser](tutorials/first-parser.md): generate, compile, and run a
   small parser, with all example files supplied.
+- [Your first Go parser](tutorials/go-parser.md): generate and run a calculator
+  with typed Go actions and a Go caller.
 
 ## How-to guides — complete a task
 
@@ -20,6 +23,7 @@ have separate homes.
 ## Reference — look something up
 
 - [Command-line interface](reference/cli.md)
+- [Go generators and runtime API](reference/go-parser.md)
 - [Grammar syntax](reference/grammar.md)
 - [Declarations and preprocessor directives](reference/directives.md)
 - [Output files and parser API](reference/output-files.md)

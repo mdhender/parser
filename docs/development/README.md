@@ -46,6 +46,21 @@ template in a new temporary directory, compiles the supplied C driver, and
 requires output exactly `Result: 7` followed by a newline. It is separate from
 offline Go tests so those tests never require a C compiler.
 
+The Go calculator tutorial is extracted, generated, and executed by
+`TestGoTutorial` in the offline Go suite, requiring exactly `Result: 11`.
+`TestGoParsers` builds isolated dependency-free modules and executes generated
+parsers with and without compression; `TestGoCommands` builds/invokes both names.
+
+For an explicit generated-Go versus pristine generated-C runtime comparison:
+
+```sh
+scripts/test-go-runtime.sh
+```
+
+This separate C-backed check compares observable results, hooks, and destructor
+effects for equivalent Go/C grammars, for both command names and compression
+modes. It does not compare generated Go source to C source.
+
 ## Explicit C reference comparisons
 
 These commands need Bash, `cc` (or `CC`), GNU coreutils/diffutils, and Go for

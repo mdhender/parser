@@ -327,3 +327,14 @@ or full SQLite `releasetest` claim.
 | `stdout.txt` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
 | `stderr.txt` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
 | `exit-status.txt` | `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa` |
+
+## Go-target runtime comparison
+
+Issue #13 adds separate Go-output commands; it does not update this source pin
+or any C golden. `scripts/test-go-runtime.sh` builds the pristine pinned
+`lemon.c`, generates with the pinned `lempar.c`, and compares observable runtime
+results against both Go commands. Equivalent action bodies live in
+`testdata/go/runtime.y`; the script supplies target-specific parameter
+declarations and executable drivers. It compares both compressed and
+uncompressed modes offline and retains failure artifacts. Generated Go is not
+expected to match the SQLite C-action grammar or C artifact bytes.

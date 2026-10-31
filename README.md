@@ -1,9 +1,14 @@
 # Lemon parser generator in Go
 
-A standalone Go port of SQLite's Lemon parser generator. **It generates C
-parsers, not Go parsers.** Give it a Lemon grammar and it emits a C parser,
-token constants, and a state report. No cgo, C compiler, or external template is
-needed to run the generator; a C compiler is needed to build your generated parser.
+A standalone Go port of SQLite's Lemon parser generator. Choose `lemon` to
+generate **C parsers**, or `glcc` / `glemon` to generate **Go parsers** from
+Lemon grammars with Go actions. The Go commands are equivalent thin wrappers
+around the same generator entry point, `RunGo`; `lemon` has no language flag
+and retains its C behavior.
+
+The generators need no cgo, C compiler, external Go dependencies, or separately
+installed default template. Building a generated C parser needs a C compiler;
+the generated Go runtime uses only the Go standard library.
 
 ## Try it
 
@@ -19,24 +24,40 @@ This writes `build/calc.c`, `build/calc.h`, and `build/calc.out`, using the
 embedded SQLite 3.50.4 template. Follow the complete
 [first-parser tutorial](docs/tutorials/first-parser.md) to compile and run it.
 
+For a Go parser, build either command and use **Go flag syntax**, with options
+before the grammar filename:
+
+```sh
+CGO_ENABLED=0 go build -o glcc ./cmd/glcc
+./glcc -package parser -d build calculator.y
+# Equivalent: go build -o glemon ./cmd/glemon
+```
+
+Here `calculator.y` must contain Go actions, not C actions. This writes
+`build/calculator.go` and `build/calculator.out`. Follow the runnable
+[Go calculator tutorial](docs/tutorials/go-parser.md), or consult the
+[Go generator and runtime reference](docs/reference/go-parser.md).
+
 ## Documentation
 
 | What do you need? | Start here |
 | --- | --- |
-| Learn by building a working parser | [First-parser tutorial](docs/tutorials/first-parser.md) |
+| Learn by building a working parser | [First C parser](docs/tutorials/first-parser.md), [Go calculator](docs/tutorials/go-parser.md) |
 | Solve a specific task | [Install](docs/how-to/install.md), [generate C](docs/how-to/generate-parser.md), [customize the template](docs/how-to/custom-template.md), [troubleshoot](docs/how-to/troubleshoot.md) |
-| Look up syntax and behavior | [CLI](docs/reference/cli.md), [grammar](docs/reference/grammar.md), [directives](docs/reference/directives.md), [outputs](docs/reference/output-files.md) |
+| Look up syntax and behavior | [CLI](docs/reference/cli.md), [Go generator/API](docs/reference/go-parser.md), [grammar](docs/reference/grammar.md), [directives](docs/reference/directives.md), [C outputs](docs/reference/output-files.md) |
 | Understand the design | [How Lemon works](docs/explanation/how-lemon-works.md), [templates](docs/explanation/parser-templates.md), [Lemon vs yacc/Bison](docs/explanation/lemon-vs-yacc.md) |
 
 See the [documentation index](docs/README.md) for all four Diátaxis categories.
 
 ## Compatibility and development
 
-Generated artifacts match the pinned **SQLite 3.50.4** C reference byte for byte
+Generated C artifacts match the pinned **SQLite 3.50.4** C reference byte for byte
 for the recorded test matrix. This is not a claim of exhaustive compatibility
 with every Lemon release, grammar, template, or platform. The Go port adds
 an embedded default template and optional internal snapshot modes.
 See the [compatibility summary](docs/reference/compatibility.md) for boundaries.
+That C differential evidence is not a compatibility claim for the separate Go
+runtime or its templates; see the [Go-specific contract](docs/reference/go-parser.md).
 
 For offline Go tests, explicit C differential checks, provenance, architecture,
 and the engineering log, use the [development documentation](docs/development/README.md).

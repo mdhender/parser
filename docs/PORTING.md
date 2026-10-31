@@ -430,3 +430,39 @@ Milestone A goldens remain unchanged.
   platform. Next recommended task: preserve documentation example checks when
   changing examples or the generated API; broader compatibility work remains
   separately scoped.
+
+## Issue #13 — Separate Go-parser generators
+
+- Added both `cmd/glcc` and `cmd/glemon` as wrappers of one `RunGo` entry point.
+  Reused the established grammar, LALR, conflict, compression, and packing code;
+  no backend-interface refactor or language flag was added to `cmd/lemon`.
+- New `internal/lemon/go.go` emits typed fields, local aliases, reductions,
+  declarations, and numeric tables. `lempar.go.tmpl` supplies the self-contained
+  Go stack/shift/reduce/recovery runtime, following `yy_find_shift_action`,
+  `yy_find_reduce_action`, `yy_shift`, `yy_reduce`, destructor, accept/failure,
+  and error-loop behavior from the pinned C runtime. Go memory management and
+  typed zero values are intentional differences, not C action translation.
+- Added Go-only raw-string scanning and incomplete-input diagnostics, explicit
+  C-allocation-directive errors, embedded/override Go templates, output/package
+  naming, extra context/argument and hook semantics. C emission and fixtures
+  remain unchanged. Go actionless rules retain reductions instead of applying
+  C's implicit-union-copy bypass optimization.
+- Offline tests compile and execute dependency-free temporary modules through
+  the public generated API, both compressed and uncompressed. They cover typed
+  arithmetic/precedence, heterogeneous and empty values, fallback/wildcard,
+  recovery/failure, hooks/destruction, fixed/dynamic stacks, parameter naming,
+  deterministic commands, invalid inputs/options, templates, and the actual
+  calculator tutorial. Explicit `scripts/test-go-runtime.sh` compares equivalent
+  generated C and Go runtime effects through both command names.
+- Added README/CLI navigation, a runnable Go tutorial, and the Go runtime/API
+  reference. Bumped the additive-feature version to 1.1.0.
+- Validation: `scripts/test-compatibility.sh` passed, including offline Go tests
+  repeated three times with an unusable C compiler, vet, standalone SQLite
+  generation, pristine baseline reproduction, and all 196 differential cases
+  (strict bytes and `diff -bw`). `scripts/test-docs.sh` and the new
+  `scripts/test-go-runtime.sh` passed. The latter includes repeated failures to
+  verify recovery suppression survives failure cleanup. Optional SQLite
+  source-tree integration was not rerun. No exhaustive Go/C runtime or
+  arbitrary-template equivalence is claimed.
+- Next recommended task: expand application-driven Go grammar coverage while
+  keeping the pinned C-output matrix separate and unchanged.

@@ -86,6 +86,7 @@ type Grammar struct {
 	defines                                                              []string
 	defineUsed                                                           []bool
 	noLineNumbers                                                        bool
+	goTarget                                                             bool
 	outname                                                              string
 	tableSize, nActionTab, nLookaheadTab                                 int
 	errors                                                               int

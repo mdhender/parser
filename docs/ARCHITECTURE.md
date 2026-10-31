@@ -463,3 +463,32 @@ Important fidelity hazards for subsequent milestones:
   policy. Milestone B compares grammar-stage snapshots and diagnostics, not
   the automaton or generated C. See the compatibility boundary for explicitly
   excluded undefined C behavior.
+
+## Separate Go target — issue #13
+
+`cmd/glcc` and `cmd/glemon` call the same `RunGo` in `internal/lemon/go.go`.
+They do not select a language on `Run` or alter C options/template emission.
+The new entry point reuses preprocessing, grammar preparation, FIRST/nullable,
+LALR construction, conflict resolution, compression, state sorting, and numeric
+packing directly. A Go-only scanner mode recognizes raw string literals and
+diagnoses incomplete trailing productions/declarations; the C scanner path
+retains its pinned behavior.
+
+`go.go` emits typed semantic fields and per-rule Go locals, then renders the
+embedded `lempar.go.tmpl` with `text/template` and formats the complete source
+with `go/format`. Aliases are locals, never textual replacements. Destructor
+`$$` substitution uses `go/scanner` to leave comments and literals untouched.
+Runtime identifiers are namespaced by `%name`; reduction temporaries use the
+reserved `_lemon` prefix, avoiding ordinary alias names. Semantic structs use
+neither reflection nor dynamic assertions. Generated parsers have no dependency
+on this module.
+
+The runtime follows the pinned C stack and shift/reduce action ranges, including
+pending SHIFTREDUCE actions, fallback before wildcard, and three-shift error
+suppression. It clears popped semantic storage and supports fixed limits or a
+growable Go slice. Actions own aliased RHS values; unaliased values are destroyed.
+Unlike C union-copy semantics, actionless Go rules produce typed zero values.
+Consequently Go disables only the no-code single-symbol bypass pass of table
+compression, retaining actual reductions. The C emitter and pinned template
+are unchanged. See the [Go contract](reference/go-parser.md) for declarations,
+hooks, ownership, and intentionally different CLI/template APIs.

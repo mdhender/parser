@@ -499,3 +499,30 @@ behavior, exhaustive template/filesystem/large-integer boundaries, allocator
 failures, every feature combination, and the full SQLite regression suite remain
 outside the executed verification claim. These are limits, not known Go/C output
 differences; the undefined-C and project-extension exclusions above still apply.
+
+## Separate generated-Go contract — issue #13
+
+`glcc` and `glemon` share a Go emitter/runtime, not the C output ABI or CLI.
+SQLite's C-action `parse.y` remains a C-only acceptance fixture. No Go output
+is compared textually with SQLite's C output. The [Go reference](reference/go-parser.md)
+specifies supported declarations and intentional differences: ordinary Go flags,
+package selection, Go action/type syntax, zero-valued actionless reductions,
+Go-style extra parameters, dynamic default stack, and Go template overrides.
+C allocation directives are rejected rather than ignored.
+
+`TestGoParsers` executes isolated generated modules with and without compression:
+precedence/associativity/parentheses, heterogeneous values, empty productions,
+fallback/wildcard, recovery and error suppression, failure/accept hooks,
+destructors/partial cleanup, deep dynamic stacks, fixed overflow (including
+empty reductions), parameter/alias naming, reuse, and no-action grammars.
+Generation is repeated through both names and checked for identical gofmt output.
+Command build/invocation, malformed grammar/options, preprocessing, explicit
+template override, and the tutorial's actual Go example are also tested offline.
+
+`scripts/test-go-runtime.sh` separately compiles the pristine C reference and
+compares executable Go/C results for `testdata/go/runtime.y`, with target-specific
+parameter declarations and drivers. Both commands and compression settings are
+covered. The recovery probe also confirmed that C itself can differ in reduction
+and recovery timing with compression disabled; that difference is not repaired
+in the shared frontend. These checks establish the tested Go contract, not
+exhaustive equivalence for all grammars, actions, templates, or malformed streams.

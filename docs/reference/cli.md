@@ -1,5 +1,27 @@
 # Command-line reference
 
+## Choose a generator
+
+| Command | Output language | Argument syntax |
+| --- | --- | --- |
+| `lemon` | C | Pinned Lemon syntax, documented below |
+| `glcc`, `glemon` | Go | Go flags **before** the grammar filename |
+
+`glcc` and `glemon` are equivalent thin wrappers around `RunGo`. For example:
+
+```sh
+glcc -package parser -d out -D FEATURE grammar.y
+glemon -q -T templates/parser.go.tmpl grammar.y
+```
+
+The output directory must exist. See the [Go generator reference](go-parser.md)
+for all Go options, template rules, output files, and runtime API, or start with
+the [Go calculator tutorial](../tutorials/go-parser.md). Do not use Lemon's
+attached forms such as `-dout` with these commands. There is **no language flag
+on `lemon`**; its C command-line and output behavior are unchanged.
+
+## C generator: `lemon`
+
 `lemon` is a Go executable that reads a Lemon grammar and generates a **C**
 parser. This reference describes the implemented command, based on SQLite
 3.50.4 Lemon. Verification results and exclusions live in

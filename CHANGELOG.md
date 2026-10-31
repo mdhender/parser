@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add the `glcc` and `glemon` Go-parser generators through one shared backend
+  (issue #13), with typed actions, heterogeneous values, fallback/wildcard,
+  recovery, hooks/destructors, and a self-contained Go runtime. Include command
+  and executable runtime tests, C/Go behavioral comparisons, a calculator
+  tutorial, and a Go API reference. Keep `lemon`'s C interface and pinned output
+  unchanged. Bump the feature version to 1.1.0.
 - Organize user documentation by Diátaxis: a runnable first-parser tutorial,
   installation/generation/template/troubleshooting guides, syntax and CLI
   references, and conceptual explanations (issues #6–#12). Keep engineering

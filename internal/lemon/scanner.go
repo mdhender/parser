@@ -92,6 +92,14 @@ func (g *Grammar) scan(z []byte) {
 					if at(i) != 0 {
 						line++
 					}
+				case g.goTarget && c == '`':
+					i++
+					for at(i) != 0 && at(i) != '`' {
+						if at(i) == '\n' {
+							line++
+						}
+						i++
+					}
 				case c == '\'' || c == '"':
 					quote, prev := c, byte(0)
 					i++
@@ -140,5 +148,8 @@ func (g *Grammar) scan(z []byte) {
 		}
 		p.token(string(z[start:i]), tokenLine)
 		i = next
+	}
+	if g.goTarget && p.state != waitRule {
+		g.error(line, "Unexpected end of grammar.")
 	}
 }
