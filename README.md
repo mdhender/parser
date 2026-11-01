@@ -43,6 +43,12 @@ Here `calculator.y` must contain Go actions, not C actions. This writes
 [Go calculator tutorial](docs/tutorials/go-parser.md), or consult the
 [Go generator and runtime reference](docs/reference/go-parser.md).
 
+For a larger example, [run PL/0 with either Go parser](docs/how-to/run-pl0.md).
+Its `glcc` and `glime` grammars both build the same AST and use **one shared
+interpreter**, with nested procedures, lexical scopes, loops, and recursion.
+Follow the separate [glcc PL/0](docs/tutorials/pl0-glcc.md) or
+[glime PL/0](docs/tutorials/pl0-glime.md) tutorial to generate and call each parser.
+
 ## Documentation
 
 | What do you need? | Start here |

@@ -1,0 +1,18 @@
+var x;
+procedure show;
+begin write x end;
+procedure outer;
+var x;
+procedure bump;
+begin x := x + 1 end;
+begin
+  x := 10;
+  call bump;
+  write x;
+  call show
+end;
+begin
+  x := 3;
+  call outer;
+  write x
+end.

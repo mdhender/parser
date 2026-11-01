@@ -14,6 +14,10 @@ have separate homes.
   with typed Go actions and a Go caller.
 - [Your first LL(1) Go parser](tutorials/ll1-parser.md): check, explain, and
   generate a predictive calculator with the separate `glime` command.
+- [Build a PL/0 AST with glcc](tutorials/pl0-glcc.md): generate a LALR parser,
+  inspect the tree, and execute it with the shared interpreter.
+- [Build a PL/0 AST with glime](tutorials/pl0-glime.md): check a predictive
+  grammar and build the same AST for that same interpreter.
 
 ## How-to guides — complete a task
 
@@ -21,12 +25,14 @@ have separate homes.
 - [Generate C from an existing grammar](how-to/generate-parser.md)
 - [Use a custom parser template](how-to/custom-template.md)
 - [Troubleshoot parser generation](how-to/troubleshoot.md)
+- [Run PL/0 with either Go parser](how-to/run-pl0.md)
 
 ## Reference — look something up
 
 - [Command-line interface](reference/cli.md)
 - [Go generators and runtime API](reference/go-parser.md)
 - [glime LL(1) command and runtime API](reference/glime.md)
+- [PL/0 example language, shared AST, and interpreter](reference/pl0.md)
 - [Grammar syntax](reference/grammar.md)
 - [Declarations and preprocessor directives](reference/directives.md)
 - [Output files and parser API](reference/output-files.md)

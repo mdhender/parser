@@ -1,0 +1,18 @@
+var n, result;
+procedure factorial;
+var saved;
+begin
+  saved := n;
+  if n > 1 then
+  begin
+    n := n - 1;
+    call factorial;
+    result := result * saved
+  end
+end;
+begin
+  n := 6;
+  result := 1;
+  call factorial;
+  write result
+end.

@@ -1,0 +1,19 @@
+// Sum the first five squares using a procedure and captured variables.
+const limit = 5;
+var n, square, total;
+procedure next;
+begin
+  n := n + 1;
+  square := n * n
+end;
+begin
+  n := 0;
+  total := 0;
+  while n < limit do
+  begin
+    call next;
+    total := total + square;
+    write square
+  end;
+  write total
+end.

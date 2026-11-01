@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add a PL/0 example (issue #15) with `glcc` LALR(1) and `glime` LL(1) Go
+  frontends, one shared AST/lexer/name checker/interpreter, runnable programs,
+  exact-regeneration and cross-frontend tests, two executable parser tutorials,
+  and language/run documentation.
+  Support nested lexical scopes, recursive procedures, and a `write` extension;
+  leave generator behavior and the pinned C reference unchanged. Version 1.2.1.
 - Add `glime`, a separate LL(1) Go parser generator (issue #14), with
   check/explain/generate commands, deterministic predictive analysis and
   diagnostics, deferred typed stack actions, standalone runtime tests, and

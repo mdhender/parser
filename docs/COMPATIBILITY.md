@@ -544,3 +544,18 @@ calculator grammar (precedence and left-associative subtraction), heterogeneous
 values, nested completion order and failure side effects, epsilon/actionless
 rules, deep nesting, invalid token kinds and malformed streams. This is not a
 claim of equivalence to SQLite's C actions or support for every Lemon directive.
+
+## Shared PL/0 application example — issue #15
+
+The [example contract](reference/pl0.md) specifies one PL/0 dialect implemented
+by `glcc` and `glime` Go frontends with one shared AST, lexer, name checker, and
+interpreter. Cross-frontend AST equality includes source positions; independent
+expected outputs and expression shapes verify precedence, left associativity,
+lexical scope, nested/direct/mutual recursion, empty statements, and integer
+semantics. Malformed sources, static errors before output, runtime division
+errors, writer failures, CLI behavior, and exact parser regeneration are tested.
+
+This is application-level Go coverage, not a historical PL/0 compiler replica
+or an extension of SQLite C compatibility. `write`, comments, forward-visible
+procedures, zero initialization, and Go int64 arithmetic are documented example
+choices. The pinned sources, fixtures, and all generator code remain unchanged.

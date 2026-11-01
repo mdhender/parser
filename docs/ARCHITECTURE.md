@@ -512,3 +512,20 @@ action and writes its result into its parent's designated slot. A new expansion
 never reuses an ancestor's storage. Aliases are Go locals, never rewritten text.
 No LR state machine, conflict resolver, packed table, cgo or reflection is used.
 See the [glime contract](reference/glime.md) for supported hooks and exclusions.
+
+## Shared PL/0 example — issue #15
+
+`examples/pl0/lalr/grammar.y` and `ll1/grammar.y` contain Go actions that
+construct the same `lang.Block`, `Statement`, and `Expr` nodes. Both adapters
+use `lang.Lex`, map symbolic terminal names to their own generated numeric IDs,
+and return `(*lang.Block, error)`. The LALR frontend feeds EOF explicitly; the
+predictive frontend omits it and uses the lexer's final position on EOF errors.
+Only the LL(1) frontend owns expression-tail bookkeeping and folds it left;
+the shared AST has no parser-specific nodes or evaluator closures.
+
+`lang.Execute` first builds lexical scopes and validates every body, then
+executes the AST. Procedure declarations retain lexical scopes; activations
+have fresh variable maps and lexical parents. Runtime name lookup follows
+those parents, not the call chain. Both frontends call this same interpreter;
+`lang` imports neither parser nor generator internals. No generator algorithms,
+templates, pinned reference files, or C output contracts change for the example.

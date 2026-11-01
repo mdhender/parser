@@ -507,3 +507,45 @@ Milestone A goldens remain unchanged.
   SQLite source-tree integration was not rerun; the reference pin is unchanged.
 - Next recommended task: collect real application LL(1) grammars before
   deciding whether to extend context support or add the recursive backend.
+
+## Issue #15 — shared PL/0 AST and interpreter
+
+- Created the issue before implementation. Added `examples/pl0` with separate
+  `glcc` LALR(1) and `glime` LL(1) grammars containing Go AST-building actions.
+  This is a new Wirth-inspired example, not translated compiler source; no new
+  C routines, generator algorithms, runtime templates, or reference pins changed.
+- Both adapters use one lexer and return the same `lang.Block` AST. The LL(1)
+  grammar folds right-recursive operator tails left into ordinary shared nodes.
+  `lang.Execute` alone implements static name checking and execution, with
+  declaration-time lexical scopes, fresh activation variables, and recursive
+  nested procedures. The interpreter does not import either frontend.
+- Added squares/sum, lexical-shadowing/capture, and recursive factorial programs;
+  documented the `write` extension, comments, mutual visibility of procedures,
+  zero initialization, int64 arithmetic, and lack of execution sandboxing.
+  Added a run how-to and language/API reference, linked from user/developer
+  navigation, and bumped the patch version to 1.2.1.
+- Added separate glcc and glime PL/0 tutorials at the owner's request. Each
+  generates its frontend, supplies a complete PL/0 program and Go caller,
+  inspects the AST, and invokes the same interpreter. `TestPL0Tutorials`
+  executes the actual shell blocks in disposable source copies and checks
+  both the initial squares output and the documented AST summary/result.
+- Tests use public parse/execute APIs to require equal ASTs, independently
+  expected outputs, explicit arithmetic-tree shapes, static rejection before
+  output, positioned syntax errors including EOF, and writer-error propagation.
+  Fresh generation into temporary directories must match checked-in parsers
+  byte for byte. The same AST executes twice with fresh state. Production
+  dependency inspection shows only the example packages and standard library.
+- Validation on macOS arm64, Go 1.27.3: `go generate ./examples/pl0/...`,
+  offline/cgo-disabled `go test -count=3 ./...`, `go vet ./...`, and
+  `scripts/test-docs.sh` passed. Ran all three sample programs through both
+  actual CLI frontends: squares/sum prints 1/4/9/16/25/55, scopes prints 11/3/3,
+  and factorial prints 720. Existing offline C golden tests remain green.
+- Supplemental `scripts/test-go-runtime.sh` did not complete: macOS Bash 3.2
+  rejects its empty `flags` array expansion under `set -u` at line 87. Its EXIT
+  cleanup also masked the failure status, so the reported zero is not a pass.
+  No newer Bash is installed. Left this pre-existing harness problem unchanged;
+  the full Linux ELF compatibility suite and optional SQLite integration were
+  not run on this Mac. No new C differential claim is made by this example.
+- Next recommended task: use this shared AST example when exercising additional
+  application grammars; keep the existing portability issue separate from
+  language execution and the pinned C compatibility boundary.
