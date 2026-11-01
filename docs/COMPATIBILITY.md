@@ -533,8 +533,8 @@ exhaustive equivalence for all grammars, actions, templates, or malformed stream
 LALR runtimes or a reconstruction of historical Lime. It shares only the
 parse-only Lemon frontend. Supported declarations, complete-input API, typed
 zero-value semantics, action timing, hooks and explicit exclusions are specified
-in the [glime reference](reference/glime.md). The recursive strategy is reserved
-and explicitly unimplemented. No automatic grammar transformation is performed.
+in the [glime reference](reference/glime.md). Both stack and recursive strategies
+are implemented. No automatic grammar transformation is performed.
 
 Offline `internal/ll1` tests verify FIRST/FOLLOW/SELECT and nullable propagation,
 EOF conflicts, all competing rule pairs, left recursion through nullable prefixes,
@@ -559,3 +559,28 @@ This is application-level Go coverage, not a historical PL/0 compiler replica
 or an extension of SQLite C compatibility. `write`, comments, forward-visible
 procedures, zero initialization, and Go int64 arithmetic are documented example
 choices. The pinned sources, fixtures, and all generator code remain unchanged.
+
+## Recursive-descent Go target — issue #16
+
+`-strategy=recursive` uses the same parse-only frontend, LL(1) analysis,
+eligibility diagnostics, types, and action emitter as the default stack backend.
+`check` and `explain` accept either strategy, validate the selected generated
+syntax without writing files, and report identical predictions. Recursive
+functions select source productions directly from the existing prediction table;
+there is no LR construction, grammar rewrite, or fallback to the stack runtime.
+
+Both strategies are compiled and executed in independent dependency-free test
+modules. Independent expectations cover heterogeneous values, nullable starts,
+epsilon, nested and right-recursive children, precedence/left associativity,
+completion order, zero values, hooks, implicit EOF, trailing input, and invalid
+streams. Emission must be deterministic and gofmt-stable. PL/0 adds a third
+frontend generated from the existing LL(1) grammar, and requires identical
+positioned ASTs and independently expected output through `lang.Execute` for
+arithmetic, scopes, nested procedures, and recursion. Its recursive tutorial is
+executed from the actual shell blocks in a disposable checkout copy.
+
+The recursive backend is tested at 4,096 grammar nesting levels; no unbounded
+depth or stack-exhaustion recovery is promised. Right recursion also consumes
+Go call-stack space. No C or LALR generator/template/reference files changed;
+their compatibility claims remain separate. Validation commands and any local
+platform limits are recorded in [the porting log](PORTING.md).

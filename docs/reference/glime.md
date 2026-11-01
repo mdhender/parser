@@ -19,7 +19,7 @@ are rejected. `-h` prints usage and succeeds; errors return status 1.
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
-| `-strategy` | `stack` | Predictive stack; `recursive` explicitly fails as not implemented |
+| `-strategy` | `stack` | `stack` for an explicit predictive stack; `recursive` for recursive descent |
 | `-package` | `parser` | Generated Go package identifier |
 | `-d` | grammar directory | Output directory, which must already exist |
 | `-D` | none | Repeatable Lemon preprocessor definition; `NAME=value` defines `NAME` |
@@ -28,6 +28,9 @@ are rejected. `-h` prints usage and succeeds; errors return status 1.
 files. It does not type-check user code or resolve its imports; build the output
 with Go to validate those. `explain` also prints deterministic nullable, FIRST,
 FOLLOW, SELECT and prediction information, including conflicts on invalid input.
+Both strategies use the same eligibility analysis and explanation; `check`
+validates syntax for the selected backend. Neither command falls back to another
+strategy or writes output.
 Diagnostics go to stderr; explanation goes to stdout. Warnings do not fail the
 command. `generate` writes only `<grammar-basename>.go`, formatted with gofmt,
 replacing an existing file only after analysis and syntax validation succeed.
@@ -101,9 +104,31 @@ names prefixed with the parser name followed by `yy`.
 can read `TOKEN`, the unexpected semantic token value (zero at implicit EOF).
 There is no alias scope or extra context in hooks, and no destructor calls.
 
+## Strategies, naming, and resource limits
+
+Both strategies expose the same API, types, aliases, zero-value results, hooks,
+and completion-action semantics. `recursive` emits one function per nonterminal
+with SELECT-based switches, including FOLLOW predictions for epsilon and EOF.
+It uses Go calls rather than an explicit prediction task stack; no generator
+runtime package is needed by either backend.
+
+Recursive nesting and right-recursive lists consume Go call-stack space.
+Go grows the stack, but finite stack/memory limits still apply; exhaustion can
+terminate the process rather than return a parse error. Tests exercise 4,096
+grammar levels, not an unlimited-depth guarantee. The default stack backend
+avoids grammar-traversal recursion, though user actions may themselves recurse
+and both backends need memory for input and semantic values.
+
+Generation replaces `<grammar-basename>.go` regardless of strategy. To retain
+both outputs from one grammar, use separate output directories/packages, as the
+[PL/0 recursive tutorial](../tutorials/pl0-recursive.md) does. To put separately
+named grammars in one package, give each a different `%name` and `%token_prefix`
+and avoid duplicate `%include`/`%code` declarations. The strategy does not rename
+the parser or token constants automatically.
+
 ## Verification
 
-Offline tests compile and execute standalone generated parsers for arithmetic,
+Offline tests compile and execute both strategies as standalone parsers for arithmetic,
 heterogeneous values, nested/right-recursive/epsilon productions, action order,
 deep nesting, malformed token streams and hooks. Tests also exercise the CLI,
 analysis diagnostics and deterministic generation. SQLite's C `parse.y` is not

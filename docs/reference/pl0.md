@@ -1,6 +1,6 @@
 # PL/0 example reference
 
-The [PL/0 example](../../examples/pl0/README.md) has two Go parser frontends
+The [PL/0 example](../../examples/pl0/README.md) has three Go parser frontends
 and one shared AST, name checker, and tree-walking interpreter. It is inspired
 by Niklaus Wirth's PL/0, not a reproduction of his compiler, diagnostics,
 bytecode, or machine limits. [Run instructions](../how-to/run-pl0.md) are separate.
@@ -8,13 +8,14 @@ bytecode, or machine limits. [Run instructions](../how-to/run-pl0.md) are separa
 ## Command
 
 ```text
-pl0 [-parser glcc|glime] program.pl0
+pl0 [-parser glcc|glime|glime-recursive] program.pl0
 ```
 
 The command lives at `./examples/pl0`. The default frontend is `glcc`.
 Flags precede the single input filename. `-h` succeeds; other invocation,
 read, lexical, syntax, semantic, or execution errors return status 1.
 Program output goes to stdout; diagnostics go to stderr.
+`glime` selects the predictive stack; `glime-recursive` selects recursive descent.
 
 ## Lexical rules
 
@@ -95,13 +96,18 @@ parameter, return statement, input operation, array, or string type.
 | [`lang/interpreter.go`](../../examples/pl0/lang/interpreter.go) | `Execute(block *Block, output io.Writer) error`. Accepts a parser-produced AST, checks it, then executes it with fresh runtime storage; does not mutate the AST. |
 | [`lalr/`](../../examples/pl0/lalr/) | `Parse(source string) (*lang.Block, error)`; shared lexer, glcc push parser, explicit EOF. |
 | [`ll1/`](../../examples/pl0/ll1/) | Same `Parse` signature; shared lexer, glime complete-input parser, implicit EOF. Right-recursive arithmetic tails fold left into shared AST nodes. |
+| [`recursive/`](../../examples/pl0/recursive/) | Same `Parse` signature and shared lexer; recursive descent generated from `ll1/grammar.y`, in a separate package with the same AST-building actions. |
 
 Both grammars use Go actions solely to construct ASTs, not to execute the PL/0
-program. Only the interpreter implements language execution. Both adapters stop
+program. Only the interpreter implements language execution. All adapters stop
 on the first syntax error, returning no AST. Private typed hook panics carry
 source locations across generated parser APIs; the adapters recover only that
 type and re-panic unrelated failures. At glime's implicit EOF, the adapter uses
 the lexer's final position.
+
+The recursive frontend consumes Go call-stack space for nested grammar calls
+and right-recursive lists. No fixed safe input depth is promised; stack or memory
+exhaustion may terminate the process. See the [glime limits](glime.md).
 
 Generated files import the example's shared language package, not generator
 internals. Production example packages depend only on each other and the Go

@@ -529,3 +529,27 @@ have fresh variable maps and lexical parents. Runtime name lookup follows
 those parents, not the call chain. Both frontends call this same interpreter;
 `lang` imports neither parser nor generator internals. No generator algorithms,
 templates, pinned reference files, or C output contracts change for the example.
+
+## Recursive LL(1) backend — issue #16
+
+`emit.go` retains the stack emitter's public entry point and adds internal
+strategy selection for `Run`. Shared emission owns semantic types, token IDs,
+alias validation/binding, action bodies, hooks, and formatting. The stack
+template is unchanged. `recursive.go.tmpl` supplies a call-local cursor,
+terminal validation/matching, and the same complete-input API and hooks.
+Emission walks grammar symbols and rules in source order, translating each
+prediction row to a nonterminal function with lookahead switch cases. Terminal
+IDs can have gaps among nonterminals, so validation uses explicit symbol kinds,
+not an LR terminal-count boundary.
+
+Each chosen production allocates independent typed RHS slots. Calls complete
+children left to right and reduce only after the last child succeeds. The
+shared reducer gives identical aliases and zero-value semantics; EOF/FOLLOW
+switch cases complete nullable productions. Errors propagate without re-running
+hooks or undoing child actions. Full-input checking precedes the accept hook.
+Grammar recursion consumes Go call-stack space, unlike the explicit task stack.
+
+`examples/pl0/recursive` generates from `ll1/grammar.y` into its own package,
+preserving `%name` and token names without colliding with the stack output.
+Its adapter produces the same positioned `lang.Block`; the interpreter and
+shared language package are unchanged. No C routines are translated or changed.

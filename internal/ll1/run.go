@@ -17,7 +17,7 @@ import (
 func Run(args []string, stdout, stderr io.Writer) int {
 	f := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	f.SetOutput(stderr)
-	strategy := f.String("strategy", "stack", "parser strategy (recursive is not implemented)")
+	strategy := f.String("strategy", "stack", "parser strategy: stack or recursive")
 	pkg := f.String("package", "parser", "generated Go package")
 	dir := f.String("d", "", "output directory (must exist)")
 	var defines []string
@@ -35,12 +35,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		}
 		return 1
 	}
-	if *strategy != "stack" {
-		if *strategy == "recursive" {
-			fmt.Fprintln(stderr, "strategy recursive is not implemented")
-		} else {
-			fmt.Fprintf(stderr, "unknown strategy %q\n", *strategy)
-		}
+	if *strategy != "stack" && *strategy != "recursive" {
+		fmt.Fprintf(stderr, "unknown strategy %q\n", *strategy)
 		return 1
 	}
 	if f.NArg() != 2 || (f.Arg(0) != "check" && f.Arg(0) != "explain" && f.Arg(0) != "generate") {
@@ -72,7 +68,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	// Validate Go declarations/actions for check as well as generate.
 	var source []byte
 	if len(a.Errors) == 0 {
-		source, err = a.Emit(*pkg)
+		source, err = a.emit(*pkg, *strategy)
 		if err != nil {
 			a.Errors = append(a.Errors, err.Error())
 		}

@@ -15,6 +15,7 @@ import (
 	"github.com/mdhender/parser/examples/pl0/lalr"
 	"github.com/mdhender/parser/examples/pl0/lang"
 	"github.com/mdhender/parser/examples/pl0/ll1"
+	"github.com/mdhender/parser/examples/pl0/recursive"
 	"github.com/mdhender/parser/internal/lemon"
 	llgenerator "github.com/mdhender/parser/internal/ll1"
 )
@@ -25,6 +26,7 @@ var frontends = []struct {
 }{
 	{"glcc", lalr.Parse},
 	{"glime", ll1.Parse},
+	{"glime-recursive", recursive.Parse},
 }
 
 func TestPrograms(t *testing.T) {
@@ -98,7 +100,7 @@ begin n:=5; call a end.`, "4\n2\n0\n"},
 	}
 }
 
-// Independent expected shapes catch the possibility that both frontends agree
+// Independent expected shapes catch the possibility that all frontends agree
 // on the wrong associativity or construct an evaluator instead of a real AST.
 func TestExpressionAST(t *testing.T) {
 	var shape func(*lang.Expr) string
@@ -203,21 +205,22 @@ func (w failingWriter) Write([]byte) (int, error) { return 0, w.err }
 
 func TestGeneratedParsersCurrent(t *testing.T) {
 	for _, frontend := range []struct {
-		dir, command string
-		run          func([]string, io.Writer, io.Writer) int
+		dir, command, grammar, strategy string
+		run                             func([]string, io.Writer, io.Writer) int
 	}{
-		{"lalr", "glcc", lemon.RunGo},
-		{"ll1", "glime", llgenerator.Run},
+		{"lalr", "glcc", "lalr/grammar.y", "", lemon.RunGo},
+		{"ll1", "glime", "ll1/grammar.y", "stack", llgenerator.Run},
+		{"recursive", "glime", "ll1/grammar.y", "recursive", llgenerator.Run},
 	} {
-		t.Run(frontend.command, func(t *testing.T) {
+		t.Run(frontend.dir, func(t *testing.T) {
 			dir := t.TempDir()
 			args := []string{frontend.command, "-package", frontend.dir, "-d", dir}
 			if frontend.command == "glcc" {
 				args = append(args, "-q")
 			} else {
-				args = append(args, "generate")
+				args = append(args, "-strategy="+frontend.strategy, "generate")
 			}
-			args = append(args, filepath.Join(frontend.dir, "grammar.y"))
+			args = append(args, frontend.grammar)
 			var out, diagnostics bytes.Buffer
 			if code := frontend.run(args, &out, &diagnostics); code != 0 {
 				t.Fatalf("generate: %d %s", code, &diagnostics)
@@ -238,11 +241,16 @@ func TestGeneratedParsersCurrent(t *testing.T) {
 }
 
 func TestCLI(t *testing.T) {
-	for _, parser := range []string{"glcc", "glime"} {
+	for _, frontend := range frontends {
+		parser := frontend.name
 		var out, diagnostics bytes.Buffer
 		if code := run([]string{"-parser", parser, "programs/squares.pl0"}, &out, &diagnostics); code != 0 || out.String() != "1\n4\n9\n16\n25\n55\n" || diagnostics.Len() != 0 {
 			t.Fatalf("%s: %d %q %s", parser, code, &out, &diagnostics)
 		}
+	}
+	var out, diagnostics bytes.Buffer
+	if code := run([]string{"programs/factorial.pl0"}, &out, &diagnostics); code != 0 || out.String() != "720\n" || diagnostics.Len() != 0 {
+		t.Fatalf("default parser: %d %q %s", code, &out, &diagnostics)
 	}
 	for _, args := range [][]string{nil, {"-parser", "unknown", "programs/squares.pl0"}, {"missing.pl0"}, {"-bad"}} {
 		var out, diagnostics bytes.Buffer
@@ -252,10 +260,32 @@ func TestCLI(t *testing.T) {
 	}
 }
 
+func TestCLIRejectSource(t *testing.T) {
+	for _, tc := range []struct{ source, want string }{
+		{"begin\nwrite 1", "2:8: unexpected"},
+		{"begin write 1; write @ end.", "1:22: unexpected character"},
+		{"begin write 1; call missing end.", "undefined"},
+	} {
+		filename := filepath.Join(t.TempDir(), "invalid.pl0")
+		if err := os.WriteFile(filename, []byte(tc.source), 0600); err != nil {
+			t.Fatal(err)
+		}
+		for _, frontend := range frontends {
+			t.Run(frontend.name+"/"+tc.source, func(t *testing.T) {
+				var out, diagnostics bytes.Buffer
+				code := run([]string{"-parser", frontend.name, filename}, &out, &diagnostics)
+				if code != 1 || out.Len() != 0 || !strings.Contains(diagnostics.String(), filename+": ") || !strings.Contains(diagnostics.String(), tc.want) {
+					t.Fatalf("got %d stdout %q stderr %q; want no output and %q", code, &out, &diagnostics, tc.want)
+				}
+			})
+		}
+	}
+}
+
 // Execute every shell block, including the embedded complete caller, in a
 // disposable source copy so regeneration never modifies the working checkout.
 func TestPL0Tutorials(t *testing.T) {
-	for _, frontend := range []string{"glcc", "glime"} {
+	for _, frontend := range []string{"glcc", "glime", "recursive"} {
 		t.Run(frontend, func(t *testing.T) {
 			doc, err := os.ReadFile("../../docs/tutorials/pl0-" + frontend + ".md")
 			if err != nil {

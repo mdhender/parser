@@ -18,6 +18,8 @@ have separate homes.
   inspect the tree, and execute it with the shared interpreter.
 - [Build a PL/0 AST with glime](tutorials/pl0-glime.md): check a predictive
   grammar and build the same AST for that same interpreter.
+- [Build a PL/0 AST with recursive descent](tutorials/pl0-recursive.md): generate
+  recursive parsing functions from the same LL(1) grammar and execute the AST.
 
 ## How-to guides — complete a task
 
@@ -25,7 +27,7 @@ have separate homes.
 - [Generate C from an existing grammar](how-to/generate-parser.md)
 - [Use a custom parser template](how-to/custom-template.md)
 - [Troubleshoot parser generation](how-to/troubleshoot.md)
-- [Run PL/0 with either Go parser](how-to/run-pl0.md)
+- [Run PL/0 with any Go parser frontend](how-to/run-pl0.md)
 
 ## Reference — look something up
 

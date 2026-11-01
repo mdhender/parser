@@ -52,20 +52,23 @@ The Go calculator tutorial is extracted, generated, and executed by
 parsers with and without compression; `TestGoCommands` builds/invokes both names.
 
 `go test ./internal/ll1` checks LL(1) analysis and the `glime` command, then
-compiles and executes standalone generated parsers, including the actual
+compiles and executes both stack and recursive standalone parsers, including the actual
 LL(1) tutorial grammar, nested completion order, heterogeneous values, epsilon,
 deep nesting, and malformed inputs. No C compiler is needed.
 
 The [PL/0 example](../../examples/pl0/README.md) keeps its generated LALR and
 LL(1) parsers checked in. `go test ./examples/pl0/...` regenerates into temporary
-directories and requires exact bytes, compares both frontends' shared ASTs,
+directories and requires exact bytes, compares all three frontends' shared ASTs,
 and runs them through the same interpreter against independent expectations.
 After changing the example grammars, run `go generate ./examples/pl0/...`.
 The example's runtime imports no generator internals; generator APIs are used
 only by its regeneration tests. These checks are part of ordinary offline tests.
-`TestPL0Tutorials` executes every shell block from both PL/0 tutorials in
+`TestPL0Tutorials` executes every shell block from all three PL/0 tutorials in
 disposable source copies, including generation, the initial CLI example, and
 the complete Go callers. It requires the exact documented AST summary and result.
+The recursive package generates from `ll1/grammar.y`, not a second predictive
+grammar. Recursive depth tests cover 4,096 levels and do not establish unlimited
+Go call-stack depth. See [the recursive tutorial](../tutorials/pl0-recursive.md).
 
 For an explicit generated-Go versus pristine generated-C runtime comparison:
 

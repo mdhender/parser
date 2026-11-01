@@ -74,53 +74,71 @@ start(A) ::= . { A=0 }
 		{"actionless", "start ::= NUM tail.\ntail ::= .\n", `func TestRuntime(t *testing.T) {
  got,err:=Parse([]ParseToken{{NUM,13}});if err!=nil || got!=0 {t.Fatal(got,err)}
 }`},
+		{"nullable_hooks", `%token_type {string}
+%default_type {int}
+%include {var events []string}
+%parse_accept { events=append(events,"accept") }
+%syntax_error { events=append(events,"syntax:"+TOKEN) }
+%parse_failure { events=append(events,"failure") }
+start(A) ::= empty(B) tail(C). { A=B*10+C; events=append(events,"start") }
+empty(A) ::= . { A=7; events=append(events,"empty") }
+tail(A) ::= Ayy(B). { A=len(B); events=append(events,B) }
+tail(A) ::= . { A=3; events=append(events,"epsilon") }
+`, `func TestRuntime(t *testing.T) {
+ got,err:=Parse(nil);if err!=nil || got!=73 || !reflect.DeepEqual(events,[]string{"empty","epsilon","start","accept"}) {t.Fatal(got,err,events)}
+ events=nil; got,err=Parse([]ParseToken{{Ayy,"next"}});if err!=nil || got!=74 || !reflect.DeepEqual(events,[]string{"empty","next","start","accept"}) {t.Fatal(got,err,events)}
+ events=nil; got,err=Parse([]ParseToken{{-1,"bad"}});if err==nil || got!=0 || !reflect.DeepEqual(events,[]string{"syntax:bad","failure"}) {t.Fatal(got,err,events)}
+ events=nil; _,err=Parse([]ParseToken{{Ayy,"one"},{0,"explicit"}});if err==nil || !reflect.DeepEqual(events,[]string{"empty","one","start","syntax:explicit","failure"}) {t.Fatal(err,events)}
+}`},
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			dir := t.TempDir()
-			grammar := filepath.Join(dir, "grammar.y")
-			if err := os.WriteFile(grammar, []byte(tc.grammar), 0600); err != nil {
-				t.Fatal(err)
-			}
-			var out, diagnostics bytes.Buffer
-			if status := ll1.Run([]string{"glime", "generate", grammar}, &out, &diagnostics); status != 0 {
-				t.Fatal(status, diagnostics.String())
-			}
-			generated, err := os.ReadFile(filepath.Join(dir, "grammar.go"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			formatted, err := format.Source(generated)
-			if err != nil || !bytes.Equal(generated, formatted) {
-				t.Fatalf("not formatted (%v):\n%s\n--- second pass ---\n%s", err, generated, formatted)
-			}
-			if status := ll1.Run([]string{"glime", "generate", grammar}, &out, &diagnostics); status != 0 {
-				t.Fatal(diagnostics.String())
-			}
-			again, _ := os.ReadFile(filepath.Join(dir, "grammar.go"))
-			if !bytes.Equal(generated, again) {
-				t.Fatal("nondeterministic generation")
-			}
-			if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module generated\n\ngo 1.27.3\n"), 0600); err != nil {
-				t.Fatal(err)
-			}
-			imports := "import \"testing\"\n"
-			if strings.Contains(tc.test, "reflect.") {
-				imports += "import \"reflect\"\n"
-			}
-			if strings.Contains(tc.test, "strings.") {
-				imports += "import \"strings\"\n"
-			}
-			if err := os.WriteFile(filepath.Join(dir, "runtime_test.go"), []byte("package parser\n"+imports+tc.test), 0600); err != nil {
-				t.Fatal(err)
-			}
-			cmd := exec.Command("go", "test", "-count=1", "./...")
-			cmd.Dir = dir
-			cmd.Env = append(os.Environ(), "GOPROXY=off", "GOWORK=off", "CGO_ENABLED=0")
-			if output, err := cmd.CombinedOutput(); err != nil {
-				t.Fatalf("%v\n%s", err, output)
-			}
-		})
+	for _, strategy := range []string{"stack", "recursive"} {
+		for _, tc := range cases {
+			t.Run(strategy+"/"+tc.name, func(t *testing.T) {
+				dir := t.TempDir()
+				grammar := filepath.Join(dir, "grammar.y")
+				if err := os.WriteFile(grammar, []byte(tc.grammar), 0600); err != nil {
+					t.Fatal(err)
+				}
+				var out, diagnostics bytes.Buffer
+				if status := ll1.Run([]string{"glime", "-strategy=" + strategy, "generate", grammar}, &out, &diagnostics); status != 0 {
+					t.Fatal(status, diagnostics.String())
+				}
+				generated, err := os.ReadFile(filepath.Join(dir, "grammar.go"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				formatted, err := format.Source(generated)
+				if err != nil || !bytes.Equal(generated, formatted) {
+					t.Fatalf("not formatted (%v):\n%s\n--- second pass ---\n%s", err, generated, formatted)
+				}
+				if status := ll1.Run([]string{"glime", "-strategy=" + strategy, "generate", grammar}, &out, &diagnostics); status != 0 {
+					t.Fatal(diagnostics.String())
+				}
+				again, _ := os.ReadFile(filepath.Join(dir, "grammar.go"))
+				if !bytes.Equal(generated, again) {
+					t.Fatal("nondeterministic generation")
+				}
+				if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module generated\n\ngo 1.27.3\n"), 0600); err != nil {
+					t.Fatal(err)
+				}
+				imports := "import \"testing\"\n"
+				if strings.Contains(tc.test, "reflect.") {
+					imports += "import \"reflect\"\n"
+				}
+				if strings.Contains(tc.test, "strings.") {
+					imports += "import \"strings\"\n"
+				}
+				if err := os.WriteFile(filepath.Join(dir, "runtime_test.go"), []byte("package parser\n"+imports+tc.test), 0600); err != nil {
+					t.Fatal(err)
+				}
+				cmd := exec.Command("go", "test", "-count=1", "./...")
+				cmd.Dir = dir
+				cmd.Env = append(os.Environ(), "GOPROXY=off", "GOWORK=off", "CGO_ENABLED=0")
+				if output, err := cmd.CombinedOutput(); err != nil {
+					t.Fatalf("%v\n%s", err, output)
+				}
+			})
+		}
 	}
 }
 
@@ -137,7 +155,8 @@ func TestCommand(t *testing.T) {
 	}{
 		{[]string{"check", grammar}, 0, ""},
 		{[]string{"-D", "ENABLE", "explain", grammar}, 0, ""},
-		{[]string{"-strategy=recursive", "generate", grammar}, 1, "not implemented"},
+		{[]string{"-strategy=recursive", "check", grammar}, 0, ""},
+		{[]string{"-strategy=recursive", "explain", grammar}, 0, ""},
 		{[]string{"-strategy=unknown", "check", grammar}, 1, "unknown strategy"},
 		{[]string{"check", "-strategy=stack", grammar}, 1, "Usage:"},
 		{[]string{"-package=for", "check", grammar}, 1, "invalid Go package"},
@@ -150,6 +169,17 @@ func TestCommand(t *testing.T) {
 			t.Fatalf("%v: %d %s", tc.args, status, &diagnostics)
 		}
 	}
+	var explanation string
+	for _, strategy := range []string{"stack", "recursive"} {
+		var out, diagnostics bytes.Buffer
+		if status := ll1.Run([]string{"glime", "-strategy=" + strategy, "-D", "ENABLE", "explain", grammar}, &out, &diagnostics); status != 0 || diagnostics.Len() != 0 {
+			t.Fatal(status, diagnostics.String())
+		}
+		if !strings.Contains(out.String(), "SELECT={NUM}") || (explanation != "" && out.String() != explanation) {
+			t.Fatalf("inconsistent predictions for %s:\n%s", strategy, &out)
+		}
+		explanation = out.String()
+	}
 	if _, err := os.Stat(filepath.Join(dir, "grammar.go")); !os.IsNotExist(err) {
 		t.Fatal("check/explain wrote output")
 	}
@@ -158,39 +188,48 @@ func TestCommand(t *testing.T) {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("%v %s", err, out)
 	}
-	cmd = exec.Command(bin, "-package=example", "generate", grammar)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("%v %s", err, out)
-	}
-	generated, err := os.ReadFile(filepath.Join(dir, "grammar.go"))
-	if err != nil || !bytes.Contains(generated, []byte("package example")) {
-		t.Fatal(err, string(generated))
+	for _, strategy := range []string{"stack", "recursive"} {
+		cmd = exec.Command(bin, "-strategy="+strategy, "-package=example", "generate", grammar)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("%v %s", err, out)
+		}
+		generated, err := os.ReadFile(filepath.Join(dir, "grammar.go"))
+		if err != nil || !bytes.Contains(generated, []byte("package example")) {
+			t.Fatal(err, string(generated))
+		}
 	}
 }
 
 func TestUnsupportedAndInvalid(t *testing.T) {
-	for _, grammar := range []string{
-		"%extra_argument {out *int}\nstart ::= NUM.", "%token_destructor {}\nstart ::= NUM.",
-		"%stack_size 20\nstart ::= NUM.", "%left NUM.\nstart ::= NUM.",
-		"%fallback NUM.\nstart ::= NUM.", "%wildcard ANY.\nstart ::= NUM.",
-		"%token_class many NUM WORD.\nstart ::= NUM.",
-		"%token_class many NUM WORD.\nmany ::= NUM.",
-		"start(A) ::= NUM(A).", "start(for) ::= NUM.", "%name for\nstart ::= NUM.",
-		"start(A) ::= NUM. { A = }", "start ::= NUM", "%token_type {[] }\nstart ::= NUM.",
-	} {
-		t.Run(grammar, func(t *testing.T) {
-			dir := t.TempDir()
-			path := filepath.Join(dir, "bad.y")
-			if err := os.WriteFile(path, []byte(grammar), 0600); err != nil {
-				t.Fatal(err)
-			}
-			var out, diagnostics bytes.Buffer
-			if ll1.Run([]string{"glime", "generate", path}, &out, &diagnostics) == 0 || diagnostics.Len() == 0 {
-				t.Fatal("accepted", grammar)
-			}
-			if _, err := os.Stat(filepath.Join(dir, "bad.go")); !os.IsNotExist(err) {
-				t.Fatal("wrote invalid parser")
-			}
-		})
+	for _, strategy := range []string{"stack", "recursive"} {
+		for _, grammar := range []string{
+			"%extra_argument {out *int}\nstart ::= NUM.", "%token_destructor {}\nstart ::= NUM.",
+			"%stack_size 20\nstart ::= NUM.", "%left NUM.\nstart ::= NUM.",
+			"%fallback NUM.\nstart ::= NUM.", "%wildcard ANY.\nstart ::= NUM.",
+			"%token_class many NUM WORD.\nstart ::= NUM.",
+			"%token_class many NUM WORD.\nmany ::= NUM.",
+			"start(A) ::= NUM(A).", "start(for) ::= NUM.", "%name for\nstart ::= NUM.",
+			"start(A) ::= NUM. { A = }", "start ::= NUM", "%token_type {[] }\nstart ::= NUM.",
+			"start ::= start NUM.\nstart ::= NUM.",
+			"start ::= NUM.\nstart ::= NUM NUM.",
+			"start ::= empty NUM.\nempty ::= NUM.\nempty ::= .",
+		} {
+			t.Run(strategy+"/"+grammar, func(t *testing.T) {
+				dir := t.TempDir()
+				path := filepath.Join(dir, "bad.y")
+				if err := os.WriteFile(path, []byte(grammar), 0600); err != nil {
+					t.Fatal(err)
+				}
+				var out, diagnostics bytes.Buffer
+				for _, command := range []string{"check", "explain", "generate"} {
+					if ll1.Run([]string{"glime", "-strategy=" + strategy, command, path}, &out, &diagnostics) == 0 || diagnostics.Len() == 0 {
+						t.Fatal("accepted", grammar)
+					}
+				}
+				if _, err := os.Stat(filepath.Join(dir, "bad.go")); !os.IsNotExist(err) {
+					t.Fatal("wrote invalid parser")
+				}
+			})
+		}
 	}
 }

@@ -1,7 +1,7 @@
-# Run PL/0 with either Go parser
+# Run PL/0 with any Go parser frontend
 
-Use the same interpreter with either the `glcc` LALR(1) parser or the `glime`
-LL(1) parser. You need a repository checkout and the Go version in
+Use the same interpreter with the `glcc` LALR(1) parser or either `glime`
+LL(1) strategy. You need a repository checkout and the Go version in
 [`go.mod`](../../go.mod); no C compiler or template installation is required.
 Run these commands from the repository root.
 
@@ -10,6 +10,7 @@ Run these commands from the repository root.
 ```sh
 go run ./examples/pl0 -parser glcc examples/pl0/programs/squares.pl0
 go run ./examples/pl0 -parser glime examples/pl0/programs/squares.pl0
+go run ./examples/pl0 -parser glime-recursive examples/pl0/programs/squares.pl0
 ```
 
 Each command prints:
@@ -24,7 +25,7 @@ Each command prints:
 ```
 
 The program computes the first five squares with a procedure, then prints their
-sum. Try the other supplied programs with either `-parser` value:
+sum. Try the other supplied programs with any `-parser` value:
 
 | Program | Expected output, one value per line |
 | --- | --- |
@@ -39,7 +40,7 @@ See the [language reference](../reference/pl0.md) for supported syntax.
 ## Regenerate after editing a grammar
 
 The checked-in generated parsers mean normal builds and runs do not regenerate
-anything. After changing either grammar, regenerate both:
+anything. After changing either grammar, regenerate all three frontends:
 
 ```sh
 go generate ./examples/pl0/...
@@ -52,6 +53,7 @@ equivalent explicit commands, from the repository root, are:
 ```sh
 go run ./cmd/glcc -q -package lalr examples/pl0/lalr/grammar.y
 go run ./cmd/glime -package ll1 generate examples/pl0/ll1/grammar.y
+go run ./cmd/glime -strategy=recursive -package recursive -d examples/pl0/recursive generate examples/pl0/ll1/grammar.y
 ```
 
 Inspect the predictive grammar without generating files:
@@ -61,9 +63,13 @@ go run ./cmd/glime check examples/pl0/ll1/grammar.y
 go run ./cmd/glime explain examples/pl0/ll1/grammar.y
 ```
 
-The example tests compare ASTs from both frontends, check independently expected
+The two glime strategies share one grammar but write separate packages so their
+generated parser names and token constants coexist. `-parser glime` continues
+to mean stack; the default CLI frontend remains `glcc`.
+
+The example tests compare ASTs from all three frontends, check independently expected
 results and expression-tree shapes, reject malformed programs, and require
-fresh generation to reproduce both checked-in parsers exactly.
+fresh generation to reproduce all checked-in parsers exactly.
 
 For smaller starting points, use the [Go calculator](../tutorials/go-parser.md)
 or [LL(1) calculator](../tutorials/ll1-parser.md) tutorial.

@@ -549,3 +549,63 @@ Milestone A goldens remain unchanged.
 - Next recommended task: use this shared AST example when exercising additional
   application grammars; keep the existing portability issue separate from
   language execution and the pinned C compatibility boundary.
+
+## Issue #16 — recursive-descent Go backend
+
+- Implemented the owner's request for `glime -strategy=recursive`. The existing
+  parse-only frontend, nullable/FIRST/FOLLOW/SELECT analysis, predictions, and
+  eligibility checks are unchanged. No C routines were translated, reference
+  pins updated, or LR construction introduced.
+- `internal/ll1/emit.go` shares type/alias/action/hook emission between strategies;
+  the new embedded `recursive.go.tmpl` supplies a cursor, terminal matcher, and
+  complete-input entry point. Generated nonterminal functions switch on the
+  existing predictions, complete children left to right in independent storage,
+  and reduce only afterward. Nullable/EOF predictions and failure propagation
+  preserve epsilon actions, hook order, and side effects before later failure.
+  Source-order token IDs are not necessarily contiguous terminals; validation
+  uses symbol kinds rather than the unprepared frontend's LR terminal count.
+- The default is still stack, and its template and checked-in PL/0 output remain
+  byte-identical. `check`/`explain` validate the chosen backend without output,
+  with identical explanation data. Unsupported directives/grammars still fail;
+  neither strategy silently falls back. Public APIs, typed aliases, zero-value
+  semantics, and hooks are the same. Generated functions need no generator
+  runtime, reflection, cgo, or additional dependencies.
+- Extended the independent generated-module public-interface tests to both
+  strategies, with asymmetric semantic results and explicit completion/hook
+  sequences, heterogeneous types, nullable starts, epsilon, nested and right
+  recursion, precedence and left associativity, actionless results, malformed
+  streams, implicit EOF, trailing input, and 4,096 nesting levels. Both outputs
+  must be deterministic and gofmt-stable. CLI tests check both executable
+  strategies, equal predictions, no-output checks, and invalid grammar rejection.
+- Added `examples/pl0/recursive`, generated from the same `ll1/grammar.y` into a
+  separate package to keep names and token constants independent. The CLI's
+  `glime` still selects stack; `glime-recursive` selects recursive descent;
+  `glcc` remains the example's default. All three return the same positioned
+  `lang.Block` and call the unchanged `lang.Execute` implementation. Extended
+  AST/output/rejection/regeneration tests to all three frontends. Added an
+  executable recursive tutorial, updated navigation/contracts/engineering
+  records, and bumped the feature version to 1.3.0.
+- Validation on macOS arm64, Go 1.27.3: `go generate ./examples/pl0/...`, offline
+  cgo-disabled `go test -count=3 ./...`, a final `go test ./...`, `go vet ./...`,
+  and `git diff --check` passed. All three PL/0 tutorials execute their actual
+  shell blocks in disposable source copies and require exact output. Standalone
+  parser tests run in independent modules with `GOPROXY=off` and `CGO_ENABLED=0`.
+  This Mac's system Go is older; prepending `$(go env GOROOT)/bin` to PATH selects
+  the already-cached declared toolchain for `GOTOOLCHAIN=local` and child tests.
+- `scripts/test-docs.sh` and `scripts/test-reference.sh` passed. The differential
+  scripts initially hit the previously recorded macOS Bash 3.2 empty-array
+  failure (their masked zero exit status was not counted as success). Built
+  GNU Bash 5.3 in a disposable `/tmp` directory from the official GNU archive,
+  prepended it and Go 1.27.3 to PATH, and reran the unchanged scripts:
+  `scripts/test-grammar.sh` (58 cases), `scripts/test-automaton.sh` (33),
+  `scripts/test-tables.sh` (48), `scripts/test-generation.sh` (57), and
+  `scripts/test-go-runtime.sh` all passed. All 196 differential cases match exact
+  bytes and `diff -bw`; C/Go LALR runtime results match for both command names and
+  compression modes. No installed tool or repository script was modified.
+- Limits: recursive nesting and right-recursive sequences consume the Go call
+  stack; 4,096-level validation is not an unbounded-depth or exhaustion-recovery
+  guarantee. The Linux ELF-only umbrella `scripts/test-compatibility.sh` and
+  optional SQLite source-tree integration were not run on this Mac. There are
+  no unresolved observed parser differences. Next recommended task: collect
+  application feedback before extending the shared directive boundary; keep
+  the existing shell-harness portability fix separate.

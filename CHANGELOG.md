@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Implement `glime -strategy=recursive` (issue #16), generating standalone Go
+  recursive-descent parsers with the existing LL(1) analysis, typed values,
+  completion actions, and hooks. Preserve the default stack backend. Add a
+  third PL/0 frontend using the same predictive grammar, AST, and interpreter,
+  with an executable tutorial and cross-strategy runtime tests. Document
+  call-stack limits and naming/coexistence. Bump the feature version to 1.3.0.
 - Add a PL/0 example (issue #15) with `glcc` LALR(1) and `glime` LL(1) Go
   frontends, one shared AST/lexer/name checker/interpreter, runnable programs,
   exact-regeneration and cross-frontend tests, two executable parser tutorials,

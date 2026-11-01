@@ -1,4 +1,4 @@
-// Command pl0 runs the same PL/0 interpreter with either Go parser frontend.
+// Command pl0 runs the same PL/0 interpreter with three Go parser frontends.
 package main
 
 import (
@@ -10,13 +10,14 @@ import (
 	"github.com/mdhender/parser/examples/pl0/lalr"
 	"github.com/mdhender/parser/examples/pl0/lang"
 	"github.com/mdhender/parser/examples/pl0/ll1"
+	"github.com/mdhender/parser/examples/pl0/recursive"
 )
 
 func run(args []string, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("pl0", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	parser := flags.String("parser", "glcc", "parser frontend: glcc or glime")
-	flags.Usage = func() { fmt.Fprintln(stderr, "Usage: pl0 [-parser glcc|glime] program.pl0") }
+	parser := flags.String("parser", "glcc", "parser frontend: glcc, glime (stack), or glime-recursive")
+	flags.Usage = func() { fmt.Fprintln(stderr, "Usage: pl0 [-parser glcc|glime|glime-recursive] program.pl0") }
 	if err := flags.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return 0
@@ -30,8 +31,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 	parse := lalr.Parse
 	if *parser == "glime" {
 		parse = ll1.Parse
+	} else if *parser == "glime-recursive" {
+		parse = recursive.Parse
 	} else if *parser != "glcc" {
-		fmt.Fprintf(stderr, "unknown parser %q; choose glcc or glime\n", *parser)
+		fmt.Fprintf(stderr, "unknown parser %q; choose glcc, glime, or glime-recursive\n", *parser)
 		return 1
 	}
 	filename := flags.Arg(0)
